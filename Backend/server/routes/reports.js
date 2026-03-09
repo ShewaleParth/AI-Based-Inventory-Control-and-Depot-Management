@@ -31,6 +31,128 @@ const REPORT_CONFIG = {
 };
 
 /**
+ * GET /api/reports/analytics
+ * Aggregated data for in-page visual charts
+ */
+router.get('/analytics', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const cacheKey = `report-analytics:${userId}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    const [products, depots, transactions, alerts] = await Promise.all([
+      Product.find({ userId }).lean(),
+      Depot.find({ userId }).lean(),
+      Transaction.find({
+        userId,
+        timestamp: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+      }).sort({ timestamp: -1 }).lean(),
+      mongoose.model('Alert').find({ userId }).lean().catch(() => [])
+    ]);
+
+    // 1. Stock distribution by status
+    const stockDistribution = [
+      { name: 'In Stock', value: products.filter(p => p.status === 'in-stock').length, color: '#10b981' },
+      { name: 'Low Stock', value: products.filter(p => p.status === 'low-stock').length, color: '#f59e0b' },
+      { name: 'Out of Stock', value: products.filter(p => p.status === 'out-of-stock').length, color: '#ef4444' },
+      { name: 'Overstock', value: products.filter(p => p.status === 'overstock').length, color: '#3b82f6' }
+    ];
+
+    // 2. Category value breakdown
+    const categoryMap = {};
+    products.forEach(p => {
+      const cat = p.category || 'Uncategorized';
+      if (!categoryMap[cat]) categoryMap[cat] = { totalValue: 0, totalStock: 0, count: 0 };
+      categoryMap[cat].totalValue += (p.stock || 0) * (p.price || 0);
+      categoryMap[cat].totalStock += (p.stock || 0);
+      categoryMap[cat].count += 1;
+    });
+    const categoryBreakdown = Object.entries(categoryMap)
+      .map(([name, data]) => ({ name, value: Math.round(data.totalValue), stock: data.totalStock, count: data.count }))
+      .sort((a, b) => b.value - a.value);
+
+    // 3. Depot utilization
+    const depotUtilization = depots.map(d => ({
+      name: d.name,
+      capacity: d.capacity,
+      used: d.currentUtilization,
+      percentage: d.capacity > 0 ? Math.round((d.currentUtilization / d.capacity) * 100) : 0,
+      status: d.status,
+      products: d.products ? d.products.length : 0
+    }));
+
+    // 4. Transaction trends (last 7 days)
+    const transactionTrends = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dayStart = new Date(date.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+      const dayLabel = dayStart.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' });
+
+      const dayTxns = transactions.filter(t => {
+        const ts = new Date(t.timestamp);
+        return ts >= dayStart && ts <= dayEnd;
+      });
+
+      transactionTrends.push({
+        day: dayLabel,
+        stockIn: dayTxns.filter(t => t.transactionType === 'stock-in').reduce((s, t) => s + (t.quantity || 0), 0),
+        stockOut: dayTxns.filter(t => t.transactionType === 'stock-out').reduce((s, t) => s + (t.quantity || 0), 0),
+        transfers: dayTxns.filter(t => t.transactionType === 'transfer').reduce((s, t) => s + (t.quantity || 0), 0)
+      });
+    }
+
+    // 5. Top low-stock items
+    const lowStockItems = products
+      .filter(p => p.stock < (p.reorderPoint || 50))
+      .sort((a, b) => a.stock - b.stock)
+      .slice(0, 10)
+      .map(p => ({
+        name: p.name,
+        sku: p.sku,
+        stock: p.stock,
+        reorderPoint: p.reorderPoint || 50,
+        urgency: p.stock === 0 ? 'critical' : p.stock < (p.reorderPoint || 50) * 0.5 ? 'high' : 'medium'
+      }));
+
+    // 6. Summary metrics
+    const totalValue = products.reduce((s, p) => s + ((p.stock || 0) * (p.price || 0)), 0);
+    const totalStock = products.reduce((s, p) => s + (p.stock || 0), 0);
+    const avgTurnover = transactions.length > 0 ? (transactions.filter(t => t.transactionType === 'stock-out').reduce((s, t) => s + (t.quantity || 0), 0) / (totalStock || 1)).toFixed(2) : '0.00';
+
+    const summaryMetrics = {
+      totalProducts: products.length,
+      totalValue,
+      totalStock,
+      totalDepots: depots.length,
+      totalTransactions: transactions.length,
+      lowStockCount: products.filter(p => p.status === 'low-stock').length,
+      outOfStockCount: products.filter(p => p.status === 'out-of-stock').length,
+      avgTurnover,
+      activeAlerts: alerts.filter(a => !a.isResolved).length,
+      criticalAlerts: alerts.filter(a => a.category === 'critical' && !a.isResolved).length
+    };
+
+    const analytics = {
+      stockDistribution,
+      categoryBreakdown,
+      depotUtilization,
+      transactionTrends,
+      lowStockItems,
+      summaryMetrics
+    };
+
+    await cache.set(cacheKey, analytics, 120);
+    res.json(analytics);
+  } catch (error) {
+    console.error('Error fetching report analytics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * GET /api/reports/stats
  */
 router.get('/stats', authenticateToken, async (req, res) => {
@@ -263,12 +385,29 @@ async function processReportSync(reportId, userId, reportType, targetId, config,
     } else if (format === 'excel') {
       result = await dataExporter.exportToExcel(reportType, { products: dataToExport });
     } else {
-      // Default to PDF
-      result = await pdfGenerator.generateUniversalReport(
-        reportType,
-        { products, depots, transactions, depotData, targetId },
-        aiAnalysis
-      );
+      // Default to PDF — pass focused data based on report type
+      let focusedProducts = products;
+      let focusedTransactions = transactions;
+
+      if (reportType === 'depot-analysis') {
+        focusedProducts = dataToExport;
+        focusedTransactions = transactions.filter(t =>
+          t.fromDepotId?.toString() === targetId ||
+          t.toDepotId?.toString() === targetId ||
+          t.fromDepot === targetId ||
+          t.toDepot === targetId);
+      } else if (reportType === 'low-stock') {
+        focusedProducts = products.filter(p => (p.stock || 0) < (p.reorderPoint || 50));
+      }
+
+      const pdfData = {
+        products: focusedProducts,
+        depots,
+        transactions: focusedTransactions,
+        depotData,
+        targetId
+      };
+      result = await pdfGenerator.generateUniversalReport(reportType, pdfData, aiAnalysis);
     }
 
     // Ensure all AI response fields are properly formatted as strings
