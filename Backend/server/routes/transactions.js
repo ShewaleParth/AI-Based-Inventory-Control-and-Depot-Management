@@ -3,15 +3,37 @@ const router = express.Router();
 const Product = require('../models/Product');
 const Depot = require('../models/Depot');
 const Transaction = require('../models/Transaction');
+const DepotAssignment = require('../models/DepotAssignment');
 const { createStockAlert } = require('../utils/alertHelpers');
+const { requirePermission, can } = require('../middleware/permissions');
+
+/**
+ * Helper: Check if a non-admin user has write access to a specific depot
+ */
+async function checkDepotWriteAccess(userId, userRole, depotId, organizationId) {
+  // Viewer can never write — blocked even before reaching this function
+  // Admin and Manager bypass depot assignment checks
+  if (userRole === 'admin' || userRole === 'manager') return { allowed: true };
+
+  const assignment = await DepotAssignment.findOne({
+    userId,
+    depotId,
+    organizationId
+  });
+
+  if (!assignment) {
+    return { allowed: false, message: 'You do not have write access to this depot. Contact your admin.' };
+  }
+
+  return { allowed: true, permissions: assignment.permissions };
+}
 
 // GET all transactions
 router.get('/', async (req, res, next) => {
   try {
-    const userId = req.userId;
     const { depotId, productId, type, startDate, endDate, limit = 1000 } = req.query;
 
-    const query = { userId };
+    const query = { userId: req.organizationId };
     
     if (depotId) {
       query.$or = [{ toDepotId: depotId }, { fromDepotId: depotId }];
@@ -34,29 +56,39 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST - Stock In (Add inventory)
-router.post('/stock-in', async (req, res, next) => {
+// POST - Stock In (Add inventory) — STAFF, MANAGER, ADMIN only
+router.post('/stock-in', requirePermission('transfers:create'), async (req, res, next) => {
   try {
-    const userId = req.userId;
     const { productId, quantity, depotId, reason, notes } = req.body;
 
     if (!productId || !quantity || !depotId) {
       return res.status(400).json({ message: 'Product, quantity, and depot are required' });
     }
 
-    const product = await Product.findOne({ _id: productId, userId });
+    // Check depot write access
+    const accessCheck = await checkDepotWriteAccess(req.userId, req.userRole, depotId, req.organizationId);
+    if (!accessCheck.allowed) {
+      return res.status(403).json({ message: accessCheck.message });
+    }
+
+    // Check specific permission
+    if (accessCheck.permissions && !accessCheck.permissions.canStockIn) {
+      return res.status(403).json({ message: 'You do not have stock-in permission for this depot' });
+    }
+
+    const product = await Product.findOne({ _id: productId, userId: req.organizationId });
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const depot = await Depot.findOne({ _id: depotId, userId });
+    const depot = await Depot.findOne({ _id: depotId, userId: req.organizationId });
     if (!depot) {
       return res.status(404).json({ message: 'Depot not found' });
     }
 
     const previousStock = product.stock;
 
-    // Update or add depot distribution (stock will be auto-calculated by pre-save hook)
+    // Update or add depot distribution
     const depotDistIndex = product.depotDistribution.findIndex(
       d => d.depotId.toString() === depotId
     );
@@ -75,7 +107,6 @@ router.post('/stock-in', async (req, res, next) => {
 
     await product.save();
 
-    // Get the new stock after save (calculated by pre-save hook)
     const newStock = product.stock;
 
     // Update depot
@@ -102,7 +133,7 @@ router.post('/stock-in', async (req, res, next) => {
 
     // Create transaction record
     const transaction = new Transaction({
-      userId,
+      userId: req.organizationId,
       productId: product._id,
       productName: product.name,
       productSku: product.sku,
@@ -114,11 +145,11 @@ router.post('/stock-in', async (req, res, next) => {
       newStock,
       reason: reason || 'Stock replenishment',
       notes: notes || '',
-      performedBy: 'User'
+      performedBy: req.userRole === 'admin' ? 'Admin' : 'Employee'
     });
 
     await transaction.save();
-    await createStockAlert(product, userId);
+    await createStockAlert(product, req.organizationId);
 
     res.status(201).json({
       message: 'Stock added successfully',
@@ -134,22 +165,31 @@ router.post('/stock-in', async (req, res, next) => {
   }
 });
 
-// POST - Stock Out (Remove inventory)
-router.post('/stock-out', async (req, res, next) => {
+// POST - Stock Out (Remove inventory) — STAFF, MANAGER, ADMIN only
+router.post('/stock-out', requirePermission('transfers:create'), async (req, res, next) => {
   try {
-    const userId = req.userId;
     const { productId, quantity, depotId, reason, notes } = req.body;
 
     if (!productId || !quantity || !depotId) {
       return res.status(400).json({ message: 'Product, quantity, and depot are required' });
     }
 
-    const product = await Product.findOne({ _id: productId, userId });
+    // Check depot write access
+    const accessCheck = await checkDepotWriteAccess(req.userId, req.userRole, depotId, req.organizationId);
+    if (!accessCheck.allowed) {
+      return res.status(403).json({ message: accessCheck.message });
+    }
+
+    if (accessCheck.permissions && !accessCheck.permissions.canStockOut) {
+      return res.status(403).json({ message: 'You do not have stock-out permission for this depot' });
+    }
+
+    const product = await Product.findOne({ _id: productId, userId: req.organizationId });
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const depot = await Depot.findOne({ _id: depotId, userId });
+    const depot = await Depot.findOne({ _id: depotId, userId: req.organizationId });
     if (!depot) {
       return res.status(404).json({ message: 'Depot not found' });
     }
@@ -165,21 +205,17 @@ router.post('/stock-out', async (req, res, next) => {
 
     const previousStock = product.stock;
 
-    // Update depot distribution (stock will be auto-calculated by pre-save hook)
     product.depotDistribution[depotDistIndex].quantity -= parseInt(quantity);
     product.depotDistribution[depotDistIndex].lastUpdated = new Date();
 
-    // Remove depot from distribution if quantity is 0
     if (product.depotDistribution[depotDistIndex].quantity === 0) {
       product.depotDistribution.splice(depotDistIndex, 1);
     }
 
     await product.save();
 
-    // Get the new stock after save (calculated by pre-save hook)
     const newStock = product.stock;
 
-    // Validate we have enough stock
     if (newStock < 0) {
       return res.status(400).json({ message: 'Insufficient total stock' });
     }
@@ -193,7 +229,6 @@ router.post('/stock-out', async (req, res, next) => {
       depot.products[depotProductIndex].quantity -= parseInt(quantity);
       depot.products[depotProductIndex].lastUpdated = new Date();
 
-      // Remove product from depot if quantity is 0
       if (depot.products[depotProductIndex].quantity === 0) {
         depot.products.splice(depotProductIndex, 1);
       }
@@ -205,7 +240,7 @@ router.post('/stock-out', async (req, res, next) => {
 
     // Create transaction record
     const transaction = new Transaction({
-      userId,
+      userId: req.organizationId,
       productId: product._id,
       productName: product.name,
       productSku: product.sku,
@@ -217,11 +252,11 @@ router.post('/stock-out', async (req, res, next) => {
       newStock,
       reason: reason || 'Sale',
       notes: notes || '',
-      performedBy: 'User'
+      performedBy: req.userRole === 'admin' ? 'Admin' : 'Employee'
     });
 
     await transaction.save();
-    await createStockAlert(product, userId);
+    await createStockAlert(product, req.organizationId);
 
     res.status(201).json({
       message: 'Stock removed successfully',
@@ -237,10 +272,9 @@ router.post('/stock-out', async (req, res, next) => {
   }
 });
 
-// POST - Transfer stock between depots
-router.post('/transfer', async (req, res, next) => {
+// POST - Transfer stock between depots — STAFF, MANAGER, ADMIN only
+router.post('/transfer', requirePermission('transfers:create'), async (req, res, next) => {
   try {
-    const userId = req.userId;
     const { productId, quantity, fromDepotId, toDepotId, reason, notes } = req.body;
 
     if (!productId || !quantity || !fromDepotId || !toDepotId) {
@@ -251,13 +285,25 @@ router.post('/transfer', async (req, res, next) => {
       return res.status(400).json({ message: 'Cannot transfer to the same depot' });
     }
 
-    const product = await Product.findOne({ _id: productId, userId });
+    // Check write access for source depot (must have transfer permission)
+    const accessCheck = await checkDepotWriteAccess(req.userId, req.userRole, fromDepotId, req.organizationId);
+    if (!accessCheck.allowed) {
+      return res.status(403).json({
+        message: 'You do not have access to transfer from this depot. Please create a stock request instead.'
+      });
+    }
+
+    if (accessCheck.permissions && !accessCheck.permissions.canTransfer) {
+      return res.status(403).json({ message: 'You do not have transfer permission for this depot' });
+    }
+
+    const product = await Product.findOne({ _id: productId, userId: req.organizationId });
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const fromDepot = await Depot.findOne({ _id: fromDepotId, userId });
-    const toDepot = await Depot.findOne({ _id: toDepotId, userId });
+    const fromDepot = await Depot.findOne({ _id: fromDepotId, userId: req.organizationId });
+    const toDepot = await Depot.findOne({ _id: toDepotId, userId: req.organizationId });
 
     if (!fromDepot || !toDepot) {
       return res.status(404).json({ message: 'One or both depots not found' });
@@ -274,11 +320,10 @@ router.post('/transfer', async (req, res, next) => {
 
     const previousStock = product.stock;
 
-    // Update source depot distribution (total stock remains same for transfers)
+    // Update source depot distribution
     product.depotDistribution[fromDepotDistIndex].quantity -= parseInt(quantity);
     product.depotDistribution[fromDepotDistIndex].lastUpdated = new Date();
 
-    // Remove from source if quantity is 0
     if (product.depotDistribution[fromDepotDistIndex].quantity === 0) {
       product.depotDistribution.splice(fromDepotDistIndex, 1);
     }
@@ -344,7 +389,7 @@ router.post('/transfer', async (req, res, next) => {
 
     // Create transaction record
     const transaction = new Transaction({
-      userId,
+      userId: req.organizationId,
       productId: product._id,
       productName: product.name,
       productSku: product.sku,
@@ -355,10 +400,10 @@ router.post('/transfer', async (req, res, next) => {
       toDepot: toDepot.name,
       toDepotId: toDepot._id,
       previousStock,
-      newStock: previousStock, // Total stock doesn't change in transfer
+      newStock: previousStock,
       reason: reason || 'Stock transfer',
       notes: notes || '',
-      performedBy: 'User'
+      performedBy: req.userRole === 'admin' ? 'Admin' : 'Employee'
     });
 
     await transaction.save();
@@ -380,11 +425,10 @@ router.post('/transfer', async (req, res, next) => {
 // POST - Generate live activity (for testing/demo purposes)
 router.post('/generate-activity', async (req, res, next) => {
   try {
-    const userId = req.userId;
     const { days = 7, transactionsPerDay = 7 } = req.body;
 
-    const products = await Product.find({ userId });
-    const depots = await Depot.find({ userId });
+    const products = await Product.find({ userId: req.organizationId });
+    const depots = await Depot.find({ userId: req.organizationId });
 
     if (products.length === 0 || depots.length === 0) {
       return res.status(400).json({ 
@@ -395,23 +439,20 @@ router.post('/generate-activity', async (req, res, next) => {
     const transactions = [];
     const now = new Date();
 
-    // Generate activity for the specified number of days
     for (let i = 0; i < days; i++) {
       const date = new Date();
       date.setDate(now.getDate() - i);
 
-      // Generate transactions for this day
       for (let j = 0; j < transactionsPerDay; j++) {
         const product = products[Math.floor(Math.random() * products.length)];
         const type = ['stock-in', 'stock-out', 'transfer'][Math.floor(Math.random() * 3)];
         const quantity = Math.floor(Math.random() * 10) + 1;
 
-        // Adjust time of day
         const txDate = new Date(date);
         txDate.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60));
 
         const tx = {
-          userId,
+          userId: req.organizationId,
           productId: product._id,
           productSku: product.sku,
           productName: product.name,

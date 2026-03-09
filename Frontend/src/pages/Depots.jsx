@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Warehouse, MapPin, BarChart3, Package, ShieldCheck, AlertTriangle, Search, Plus, ExternalLink, X, Trash2 } from 'lucide-react';
+import { Warehouse, MapPin, BarChart3, Package, ShieldCheck, AlertTriangle, Search, Plus, ExternalLink, X, Trash2, Lock, Eye } from 'lucide-react';
 import { api } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import DepotDetails from './DepotDetails';
 
 const AddDepotModal = ({ isOpen, onClose, onAdd }) => {
@@ -48,7 +49,7 @@ const AddDepotModal = ({ isOpen, onClose, onAdd }) => {
     );
 };
 
-const DepotCard = ({ depot, onViewDetails, onDelete }) => {
+const DepotCard = ({ depot, onViewDetails, onDelete, canWrite, userIsAdmin }) => {
     const utilization = Math.round((depot.currentUtilization / depot.capacity) * 100) || 0;
     const getStatusColor = (u) => {
         if (u > 85) return '#ef4444'; // Critical
@@ -69,6 +70,22 @@ const DepotCard = ({ depot, onViewDetails, onDelete }) => {
                     </div>
                 </div>
                 <div className="status-indicator" style={{ backgroundColor: getStatusColor(utilization) }}></div>
+                {!canWrite && (
+                    <span style={{
+                        background: 'rgba(107,114,128,0.15)', color: '#6b7280',
+                        borderRadius: '4px', padding: '0.1rem 0.4rem', fontSize: '0.65rem',
+                        fontWeight: '600', display: 'flex', alignItems: 'center', gap: '3px'
+                    }}>
+                        <Eye size={10} /> READ-ONLY
+                    </span>
+                )}
+                {canWrite && !userIsAdmin && (
+                    <span style={{
+                        background: 'rgba(16,185,129,0.15)', color: '#10b981',
+                        borderRadius: '4px', padding: '0.1rem 0.4rem', fontSize: '0.65rem',
+                        fontWeight: '600'
+                    }}>ASSIGNED</span>
+                )}
             </div>
 
             <div className="depot-stats-grid">
@@ -91,6 +108,7 @@ const DepotCard = ({ depot, onViewDetails, onDelete }) => {
                     <span>Cap: {depot.capacity?.toLocaleString()} units</span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                    {userIsAdmin && (
                     <button
                         className="delete-depot-btn"
                         onClick={(e) => {
@@ -101,6 +119,7 @@ const DepotCard = ({ depot, onViewDetails, onDelete }) => {
                     >
                         <Trash2 size={14} />
                     </button>
+                    )}
                     <button className="view-inventory-btn" onClick={() => onViewDetails(depot.id || depot._id)}>
                         View Details <ExternalLink size={14} />
                     </button>
@@ -111,6 +130,7 @@ const DepotCard = ({ depot, onViewDetails, onDelete }) => {
 };
 
 const Depots = () => {
+    const { isAdmin, canWriteDepot } = useAuth();
     const [depots, setDepots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -230,9 +250,11 @@ const Depots = () => {
                     <h1>Depot Management</h1>
                     <p className="text-muted">Monitor storage capacity and SKU distribution across your network.</p>
                 </div>
+                {isAdmin() && (
                 <button className="add-items-btn" onClick={() => setIsModalOpen(true)}>
                     Register New Depot <Plus size={18} />
                 </button>
+                )}
             </div>
 
             {/* Enhanced Statistics Cards */}
@@ -335,6 +357,8 @@ const Depots = () => {
                             depot={depot}
                             onViewDetails={handleViewDetails}
                             onDelete={handleDeleteDepot}
+                            canWrite={canWriteDepot(depot.id || depot._id)}
+                            userIsAdmin={isAdmin()}
                         />
                     ))}
 
@@ -346,7 +370,7 @@ const Depots = () => {
                         </div>
                     )}
 
-                    {statusFilter === 'All' && searchQuery === '' && (
+                    {statusFilter === 'All' && searchQuery === '' && isAdmin() && (
                         <div className="depot-card-add" onClick={() => setIsModalOpen(true)}>
                             <div className="add-icon"><Plus size={32} /></div>
                             <h3>Add New Node</h3>

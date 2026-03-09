@@ -14,14 +14,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Warehouse,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
 
 const Sidebar = ({ activeItem, setActiveItem, isMobileOpen, isCollapsed, onClose, onToggleCollapse }) => {
-  const { user } = useAuth();
+  const { user, isAdmin, hasPermission } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch unread notification count
@@ -56,15 +57,19 @@ const Sidebar = ({ activeItem, setActiveItem, isMobileOpen, isCollapsed, onClose
   ];
 
   const otherItems = [
-    { icon: FileText, label: 'Reports Export' },
+    ...(hasPermission('reports:export') ? [{ icon: FileText, label: 'Reports Export' }] : []),
     { icon: Bell, label: 'Notifications', badge: unreadCount },
   ];
 
   const accountItems = [
+    ...(isAdmin() ? [{ icon: Shield, label: 'Admin Panel', live: true }] : []),
     { icon: User, label: 'Account' },
     { icon: Settings, label: 'System Settings' },
     { icon: MessageSquare, label: 'Feedback' },
   ];
+
+  // Human-readable role labels for footer display
+  const ROLE_LABELS = { admin: 'Super Admin', manager: 'Manager', staff: 'Staff', viewer: 'Viewer (Read-Only)' };
 
   const handleNavClick = (label) => {
     setActiveItem(label);
@@ -169,7 +174,7 @@ const Sidebar = ({ activeItem, setActiveItem, isMobileOpen, isCollapsed, onClose
               <strong>
                 {user?.name || user?.first_name || user?.firstName || user?.email?.split('@')[0] || 'User'}
               </strong>
-              <span>{user?.role === 'admin' ? 'Super Admin' : 'Network Manager'}</span>
+              <span>{ROLE_LABELS[user?.role] || 'Staff'}</span>
             </div>
           )}
           {!isCollapsed && <Settings size={16} className="settings-icon spin-on-hover" />}

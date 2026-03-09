@@ -10,6 +10,7 @@ const pdfGenerator = require('../services/pdfGenerator');
 const dataExporter = require('../services/dataExporter');
 const { cache } = require('../config/redis');
 const authenticateToken = require('../middleware/auth');
+const { requirePermission } = require('../middleware/permissions');
 const path = require('path');
 
 // Report type configuration
@@ -34,21 +35,21 @@ const REPORT_CONFIG = {
  */
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    const cacheKey = `report-stats:${req.userId}`;
+    const cacheKey = `report-stats:${req.organizationId}`;
     const cached = await cache.get(cacheKey);
 
     if (cached) {
       return res.json(cached);
     }
 
-    const totalReports = await Report.countDocuments({ userId: req.userId });
+    const totalReports = await Report.countDocuments({ userId: req.organizationId });
     const todayStart = new Date().setHours(0, 0, 0, 0);
     const todayReports = await Report.countDocuments({
-      userId: req.userId,
+      userId: req.organizationId,
       createdAt: { $gte: todayStart }
     });
 
-    const reports = await Report.find({ userId: req.userId, status: 'completed' });
+    const reports = await Report.find({ userId: req.organizationId, status: 'completed' });
     const totalSize = reports.reduce((sum, r) => sum + (r.fileSize || 0), 0);
     const sizeInMB = (totalSize / (1024 * 1024)).toFixed(1);
 
@@ -74,7 +75,7 @@ router.get('/list', authenticateToken, async (req, res) => {
   try {
     const { category, status } = req.query;
 
-    const query = { userId: req.userId };
+    const query = { userId: req.organizationId };
     if (status) query.status = status;
 
     const reports = await Report.find(query)
@@ -90,9 +91,9 @@ router.get('/list', authenticateToken, async (req, res) => {
 });
 
 /**
- * POST /api/reports/generate
+ * POST /api/reports/generate — MANAGER + ADMIN only
  */
-router.post('/generate', authenticateToken, async (req, res) => {
+router.post('/generate', authenticateToken, requirePermission('reports:export'), async (req, res) => {
   try {
     const { reportType, targetId, format = 'pdf', dateRange } = req.body;
 
@@ -115,7 +116,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
         });
       }
 
-      const depot = await Depot.findOne({ _id: targetId, userId: req.userId });
+      const depot = await Depot.findOne({ _id: targetId, userId: req.organizationId });
       if (!depot) {
         return res.status(404).json({ error: 'Depot not found' });
       }
@@ -125,7 +126,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
 
     // Create report record
     const report = await Report.create({
-      userId: req.userId,
+      userId: req.organizationId,
       reportType,
       targetId: targetId || null,
       targetModel,
@@ -145,7 +146,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
       console.error('Background report processing error:', err);
     });
 
-    await cache.del(`report-stats:${req.userId}`);
+    await cache.del(`report-stats:${req.organizationId}`);
 
     res.json({
       reportId: report._id,
@@ -330,7 +331,7 @@ router.get('/:reportId/status', authenticateToken, async (req, res) => {
   try {
     const report = await Report.findOne({
       _id: req.params.reportId,
-      userId: req.userId
+      userId: req.organizationId
     }).select('-data');
 
     if (!report) {
@@ -359,7 +360,7 @@ router.get('/:reportId/download', authenticateToken, async (req, res) => {
   try {
     const report = await Report.findOne({
       _id: req.params.reportId,
-      userId: req.userId
+      userId: req.organizationId
     });
 
     if (!report) {
@@ -399,7 +400,7 @@ router.delete('/:reportId', authenticateToken, async (req, res) => {
   try {
     const report = await Report.findOneAndDelete({
       _id: req.params.reportId,
-      userId: req.userId
+      userId: req.organizationId
     });
 
     if (!report) {
@@ -414,7 +415,7 @@ router.delete('/:reportId', authenticateToken, async (req, res) => {
       }
     }
 
-    await cache.del(`report-stats:${req.userId}`);
+    await cache.del(`report-stats:${req.organizationId}`);
 
     res.json({ message: 'Report deleted successfully' });
   } catch (error) {

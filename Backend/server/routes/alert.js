@@ -2,13 +2,14 @@ const express = require('express');
 const Alert = require('../models/Alert');
 const Product = require('../models/Product');
 const Depot = require('../models/Depot');
+const { requirePermission } = require('../middleware/permissions');
 
 const router = express.Router();
 
 // Get all alerts with filtering and pagination
 router.get('/', async (req, res) => {
   try {
-    const userId = req.userId; // From auth middleware
+    const userId = req.organizationId; // From auth middleware
     const {
       page = 1,
       limit = 10000,
@@ -117,8 +118,8 @@ router.patch('/:id/read', async (req, res) => {
   }
 });
 
-// Mark alert as resolved
-router.patch('/:id/resolve', async (req, res) => {
+// Mark alert as resolved (MANAGER + ADMIN only)
+router.patch('/:id/resolve', requirePermission('alerts:dismiss'), async (req, res) => {
   try {
     const { resolvedBy, resolutionNotes } = req.body;
 
@@ -214,7 +215,7 @@ router.patch('/bulk/read', async (req, res) => {
 // Get unread notification count
 router.get('/unread/count', async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
     const count = await Alert.countDocuments({ userId, isRead: false });
     res.json({ count });
   } catch (error) {
@@ -225,7 +226,7 @@ router.get('/unread/count', async (req, res) => {
 // Mark all alerts as read for user
 router.patch('/mark-all-read', async (req, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
     const result = await Alert.updateMany(
       { userId, isRead: false },
       { isRead: true }

@@ -2,15 +2,50 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const { generateToken } = require('../utils/jwt');
+const {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  storeRefreshToken,
+  revokeRefreshToken,
+  revokeAllRefreshTokens,
+  isRefreshTokenValid,
+  REFRESH_COOKIE_OPTIONS
+} = require('../utils/jwt');
 const { sendOTPEmail, sendPasswordResetEmail } = require('../services/emailService');
 const { validate, signupSchema, loginSchema } = require('../middleware/validation');
 const { authLimiter } = require('../middleware/security');
+const DepotAssignment = require('../models/DepotAssignment');
 
-// Helper function to generate OTP
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
+// Helper: generate OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+// Helper: fetch assigned depots for a user
+async function getAssignedDepots(userId) {
+  try {
+    const assignments = await DepotAssignment.find({ userId })
+      .populate('depotId', 'name location');
+    return assignments.map(a => ({
+      depotId: a.depotId?._id || a.depotId,
+      depotName: a.depotId?.name || 'Unknown',
+      permissions: a.permissions
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Helper: issue both tokens and set the refresh cookie.
+ * Call after any successful authentication event.
+ */
+async function issueTokens(res, userId) {
+  const accessToken = generateAccessToken(userId);
+  const { token: refreshToken, jti } = generateRefreshToken(userId);
+  await storeRefreshToken(userId, jti);
+  res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
+  return accessToken;
+}
 
 // ============================================================================
 // AUTHENTICATION ROUTES
@@ -40,7 +75,7 @@ router.post('/signup', authLimiter, validate(signupSchema), async (req, res) => 
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Create new user
+    // Create new user as admin (self-registered users are org owners)
     const newUser = new req.app.locals.User({
       first_name,
       last_name,
@@ -49,10 +84,13 @@ router.post('/signup', authLimiter, validate(signupSchema), async (req, res) => 
       isVerified: false,
       otp,
       otpExpiry,
-      role: 'staff',
+      role: 'admin',
       createdAt: new Date(),
       updatedAt: new Date()
     });
+
+    // Set organizationId to self (this user is the org owner)
+    newUser.organizationId = newUser._id;
 
     await newUser.save();
 
@@ -128,18 +166,35 @@ router.post('/verify-otp', authLimiter, async (req, res) => {
     user.otpExpiry = undefined;
     await user.save();
 
-    // Generate JWT token using centralized utility
-    const token = generateToken(user._id);
+    // Generate access + refresh tokens
+    const accessToken = await issueTokens(res, user._id);
+
+    // Get assigned depots for this user
+    let assignedDepots = [];
+    try {
+      const DepotAssignment = require('../models/DepotAssignment');
+      const assignments = await DepotAssignment.find({ userId: user._id })
+        .populate('depotId', 'name location');
+      assignedDepots = assignments.map(a => ({
+        depotId: a.depotId?._id || a.depotId,
+        depotName: a.depotId?.name || 'Unknown',
+        permissions: a.permissions
+      }));
+    } catch (depotErr) {
+      console.warn('Could not fetch depot assignments:', depotErr.message);
+    }
 
     res.json({
       message: 'Email verified successfully',
-      token,
+      token: accessToken,
       user: {
         id: user._id,
         name: `${user.first_name} ${user.last_name}`,
         email: user.email,
         role: user.role,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        organizationId: user.organizationId || user._id,
+        assignedDepots
       }
     });
 
@@ -230,23 +285,27 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
       });
     }
 
-    // Generate JWT token using centralized utility
-    const token = generateToken(user._id);
+    // Generate access + refresh tokens
+    const accessToken = await issueTokens(res, user._id);
 
     // Update last login
     user.updatedAt = new Date();
     await user.save();
 
+    const assignedDepots = await getAssignedDepots(user._id);
+
     res.json({
       message: 'Login successful',
-      token,
+      token: accessToken,
       user: {
         id: user._id,
         name: `${user.first_name} ${user.last_name}`,
         email: user.email,
         role: user.role,
         isVerified: user.isVerified,
-        avatar: user.avatar
+        avatar: user.avatar,
+        organizationId: user.organizationId || user._id,
+        assignedDepots
       }
     });
 
@@ -275,6 +334,8 @@ router.get('/me', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const assignedDepots = await getAssignedDepots(user._id);
+
     res.json({
       user: {
         id: user._id,
@@ -283,7 +344,9 @@ router.get('/me', async (req, res) => {
         role: user.role,
         isVerified: user.isVerified,
         avatar: user.avatar,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        organizationId: user.organizationId || user._id,
+        assignedDepots
       }
     });
 
@@ -387,6 +450,75 @@ router.post('/reset-password', authLimiter, async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ message: 'Error resetting password' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/refresh
+ * @desc    Silently exchange a valid refresh token for a new access token
+ * @access  Public (uses httpOnly cookie)
+ */
+router.post('/refresh', async (req, res) => {
+  try {
+    const incomingRefresh = req.cookies?.refreshToken;
+
+    if (!incomingRefresh) {
+      return res.status(401).json({ message: 'No refresh token provided' });
+    }
+
+    // Verify the JWT signature
+    const decoded = verifyRefreshToken(incomingRefresh);
+    if (!decoded) {
+      res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
+      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+
+    const { userId, jti } = decoded;
+
+    // Check Redis — token might have been revoked on logout
+    const valid = await isRefreshTokenValid(userId, jti);
+    if (!valid) {
+      res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
+      return res.status(401).json({ message: 'Session revoked. Please log in again.' });
+    }
+
+    // Rotate: revoke old refresh token, issue a new pair
+    await revokeRefreshToken(userId, jti);
+    const newAccessToken = await issueTokens(res, userId);
+
+    res.json({ token: newAccessToken });
+
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(500).json({ message: 'Error refreshing token' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/logout
+ * @desc    Revoke refresh token and clear cookie
+ * @access  Public (refresh token in cookie)
+ */
+router.post('/logout', async (req, res) => {
+  try {
+    const incomingRefresh = req.cookies?.refreshToken;
+
+    if (incomingRefresh) {
+      const decoded = verifyRefreshToken(incomingRefresh);
+      if (decoded?.userId && decoded?.jti) {
+        await revokeRefreshToken(decoded.userId, decoded.jti);
+      }
+    }
+
+    // Clear the cookie regardless
+    res.clearCookie('refreshToken', { ...REFRESH_COOKIE_OPTIONS, maxAge: 0 });
+    res.json({ message: 'Logged out successfully' });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Still clear the cookie even on error
+    res.clearCookie('refreshToken', { ...REFRESH_COOKIE_OPTIONS, maxAge: 0 });
+    res.json({ message: 'Logged out' });
   }
 });
 

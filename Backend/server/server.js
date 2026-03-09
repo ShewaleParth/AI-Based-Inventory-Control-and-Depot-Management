@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const http = require('http');
 const socketio = require('socket.io');
 
@@ -25,6 +26,8 @@ const transactionRoutes = require('./routes/transactions');
 const dashboardRoutes = require('./routes/dashboard');
 const reportsRoutes = require('./routes/reports');
 const alertRoutes = require('./routes/alert');
+const adminRoutes = require('./routes/admin');
+const stockRequestRoutes = require('./routes/stockRequests');
 
 // Initialize Redis (Upstash REST API)
 const { redis } = require('./config/redis');
@@ -47,7 +50,11 @@ const io = socketio(server, {
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true, // Required for httpOnly cookies to be sent cross-origin
+}));
+app.use(cookieParser()); // Parse cookies for refresh token
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -60,6 +67,8 @@ app.locals.Transaction = models.Transaction;
 app.locals.Forecast = models.Forecast;
 app.locals.Alert = models.Alert;
 app.locals.Report = models.Report;
+app.locals.DepotAssignment = models.DepotAssignment;
+app.locals.StockRequest = models.StockRequest;
 
 // Initialize services
 initializeEmailService();
@@ -109,6 +118,8 @@ app.use('/api/transactions', authenticateToken, transactionRoutes);
 app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/reports', authenticateToken, reportsRoutes);
 app.use('/api/alerts', authenticateToken, alertRoutes);
+app.use('/api/admin', authenticateToken, adminRoutes);
+app.use('/api/stock-requests', authenticateToken, stockRequestRoutes);
 
 // WebSocket connection handling
 io.on('connection', (socket) => {

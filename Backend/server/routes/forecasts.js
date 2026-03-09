@@ -6,7 +6,7 @@ const Forecast = require('../models/Forecast');
 router.get('/', async (req, res, next) => {
   try {
     const { sku, limit = 10000, sortBy = 'updatedAt' } = req.query;
-    const userId = req.userId; // From JWT token
+    const userId = req.organizationId; // From JWT token
 
     const query = { userId };
 
@@ -44,7 +44,7 @@ router.get('/', async (req, res, next) => {
 router.get('/:identifier', async (req, res, next) => {
   try {
     const { identifier } = req.params;
-    const userId = req.userId;
+    const userId = req.organizationId;
 
     let forecast = await Forecast.findOne({ sku: identifier, userId });
     if (!forecast) {
@@ -78,7 +78,7 @@ router.get('/:identifier', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const { itemId, sku } = req.body;
-    const userId = req.userId;
+    const userId = req.organizationId;
 
     let forecast = await Forecast.findOne({ $or: [{ itemId }, { sku }], userId });
 
@@ -114,7 +114,7 @@ router.post('/', async (req, res, next) => {
 // GET forecast analytics
 router.get('/analytics/insights', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
 
     const forecasts = await Forecast.find({ userId });
 

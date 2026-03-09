@@ -10,6 +10,7 @@ const Transaction = require('../models/Transaction');
 const { generateUniqueSKU, updateProductStatus, updateProductStockFromDepots } = require('../utils/productHelpers');
 const { createStockAlert, checkDepotCapacity } = require('../utils/alertHelpers');
 const { recalculateDepotMetrics } = require('../utils/depotHelpers');
+const { requirePermission } = require('../middleware/permissions');
 
 // GET all products
 router.get('/', async (req, res, next) => {
@@ -17,7 +18,7 @@ router.get('/', async (req, res, next) => {
     const { search, category, status, location, page = 1, limit = 20 } = req.query;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(Math.max(1, parseInt(limit)), 500); // max 500 per page
-    const query = { userId: req.userId };
+    const query = { userId: req.organizationId };
 
     if (location) {
       query.location = location;
@@ -104,10 +105,10 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST - Create product
-router.post('/', async (req, res, next) => {
+// POST - Create product (STAFF, MANAGER, ADMIN)
+router.post('/', requirePermission('products:write'), async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
     let { sku, name, category, stock, reorderPoint, supplier, price, depotId, depotQuantity, image } = req.body;
 
     if (!depotId) {
@@ -190,7 +191,7 @@ router.post('/', async (req, res, next) => {
 router.post('/bulk', async (req, res, next) => {
   try {
     const productsData = req.body;
-    const userId = req.userId;
+    const userId = req.organizationId;
     const io = req.app.get('io'); // Get WebSocket instance
 
     console.log('Bulk upload request received:', {
@@ -554,7 +555,7 @@ router.post('/bulk', async (req, res, next) => {
 router.post('/bulk-with-transactions', async (req, res, next) => {
   try {
     const productsData = req.body;
-    const userId = req.userId;
+    const userId = req.organizationId;
 
     if (!Array.isArray(productsData)) {
       return res.status(400).json({ message: 'Input must be an array of products' });
@@ -766,7 +767,7 @@ router.post('/bulk-with-transactions', async (req, res, next) => {
 // GET - Get product details with full analytics
 router.get('/:id/details', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
     const productId = req.params.id;
     const Transaction = require('../models/Transaction');
 
@@ -867,7 +868,7 @@ router.get('/:id/details', async (req, res, next) => {
 // GET - Get product by ID
 router.get('/:id', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
     const product = await Product.findOne({ _id: req.params.id, userId });
 
     if (!product) {
@@ -883,7 +884,7 @@ router.get('/:id', async (req, res, next) => {
 // PUT - Update product
 router.put('/:id', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
 
     const product = await Product.findOne({ _id: req.params.id, userId });
     if (!product) {
@@ -891,12 +892,13 @@ router.put('/:id', async (req, res, next) => {
     }
 
     // Prevent Mass Assignment - Explicitly update allowed fields
-    const { sku, name, category, stock, reorderPoint, supplier, price, image, dailySales, weeklySales, brand, leadTime } = req.body;
+    // NOTE: Stock is NOT updated here - use /products/:id/add-stock endpoint instead
+    const { sku, name, category, reorderPoint, supplier, price, image, dailySales, weeklySales, brand, leadTime } = req.body;
 
     if (sku) product.sku = sku;
     if (name) product.name = name;
     if (category) product.category = category;
-    if (stock !== undefined) product.stock = stock;
+    // Stock modification removed - must use add-stock endpoint to maintain depot distribution integrity
     if (reorderPoint !== undefined) product.reorderPoint = reorderPoint;
     if (supplier) product.supplier = supplier;
     if (price !== undefined) product.price = price;
@@ -919,10 +921,145 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
-// DELETE - Delete product
-router.delete('/:id', async (req, res, next) => {
+// POST - Add stock to existing product (Manual Stock Addition)
+router.post('/:id/add-stock', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
+    const productId = req.params.id;
+    const { depotId, quantity, reason } = req.body;
+
+    // Validation
+    if (!depotId) {
+      return res.status(400).json({ message: 'Depot ID is required' });
+    }
+
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({ message: 'Quantity must be a positive number' });
+    }
+
+    // Find product
+    const product = await Product.findOne({ _id: productId, userId });
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Find depot
+    const depot = await Depot.findOne({ _id: depotId, userId });
+    if (!depot) {
+      return res.status(404).json({ message: 'Depot not found' });
+    }
+
+    const stockToAdd = Number(quantity);
+    const previousStock = product.stock || 0;
+
+    // Update product depot distribution
+    const existingDepotIndex = product.depotDistribution.findIndex(
+      d => d.depotId.toString() === depotId.toString()
+    );
+
+    if (existingDepotIndex >= 0) {
+      product.depotDistribution[existingDepotIndex].quantity += stockToAdd;
+      product.depotDistribution[existingDepotIndex].lastUpdated = new Date();
+    } else {
+      product.depotDistribution.push({
+        depotId: depot._id,
+        depotName: depot.name,
+        quantity: stockToAdd,
+        lastUpdated: new Date()
+      });
+    }
+
+    // Update depot's products array
+    const depotProductIndex = depot.products.findIndex(
+      p => p.productId.toString() === productId.toString()
+    );
+
+    if (depotProductIndex >= 0) {
+      depot.products[depotProductIndex].quantity += stockToAdd;
+      depot.products[depotProductIndex].lastUpdated = new Date();
+    } else {
+      depot.products.push({
+        productId: product._id,
+        productName: product.name,
+        productSku: product.sku,
+        quantity: stockToAdd,
+        lastUpdated: new Date()
+      });
+    }
+
+    // Save product (pre-save hook will recalculate total stock)
+    product.updatedAt = new Date();
+    await product.save();
+
+    // Save depot with updated metrics
+    await recalculateDepotMetrics(depot);
+    await depot.save();
+
+    // Create transaction record
+    const transaction = new Transaction({
+      userId,
+      productId: product._id,
+      productName: product.name,
+      productSku: product.sku,
+      transactionType: 'stock-in',
+      quantity: stockToAdd,
+      toDepot: depot.name,
+      toDepotId: depot._id,
+      previousStock: previousStock,
+      newStock: product.stock, // This is now recalculated by pre-save hook
+      reason: reason || 'Manual stock addition',
+      performedBy: 'User',
+      timestamp: new Date(),
+      createdAt: new Date()
+    });
+    await transaction.save();
+
+    // Update stock alerts
+    await createStockAlert(product, userId);
+
+    // Emit WebSocket event if available
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('product:stock-updated', {
+        productId: product._id,
+        productName: product.name,
+        productSku: product.sku,
+        newStock: product.stock,
+        depotId: depot._id,
+        depotName: depot.name
+      });
+
+      io.emit('transaction:created', {
+        productId: product._id,
+        productName: product.name,
+        productSku: product.sku,
+        transactionType: 'stock-in',
+        quantity: stockToAdd,
+        depotName: depot.name,
+        depotId: depot._id
+      });
+    }
+
+    res.json({
+      message: 'Stock added successfully',
+      product: {
+        id: product._id,
+        sku: product.sku,
+        name: product.name,
+        previousStock,
+        newStock: product.stock,
+        addedQuantity: stockToAdd,
+        depot: depot.name
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+// DELETE - Delete product (MANAGER + ADMIN only)
+router.delete('/:id', requirePermission('products:delete'), async (req, res, next) => {
+  try {
+    const userId = req.organizationId;
     const Alert = require('../models/Alert');
 
     const product = await Product.findOne({ _id: req.params.id, userId });
@@ -967,7 +1104,7 @@ router.delete('/:id', async (req, res, next) => {
 // GET - Get all categories
 router.get('/categories/list', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
     const categories = await Product.distinct('category', { userId });
     res.json({ categories });
   } catch (error) {

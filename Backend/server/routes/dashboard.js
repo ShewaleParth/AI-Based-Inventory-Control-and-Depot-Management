@@ -9,7 +9,7 @@ const Forecast = require('../models/Forecast');
 // GET dashboard stats - formatted for frontend
 router.get('/stats', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
 
     console.log(`[DASHBOARD] User: ${userId} | Fetching stats...`);
 
@@ -71,7 +71,7 @@ router.get('/stats', async (req, res, next) => {
 // GET top SKUs - formatted for frontend
 router.get('/top-skus', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
 
     const products = await Product.find({ userId })
       .sort({ stock: -1 })
@@ -95,7 +95,7 @@ router.get('/top-skus', async (req, res, next) => {
 // GET sales trend - formatted for frontend (ENHANCED VERSION)
 router.get('/sales-trend', async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.organizationId;
     const { depotId, days = 7 } = req.query;
 
     const trendData = [];

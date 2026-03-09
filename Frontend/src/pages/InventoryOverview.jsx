@@ -409,9 +409,13 @@ const InventoryOverview = () => {
                                     <input type="number" required value={editingProduct.price} onChange={e => setEditingProduct({ ...editingProduct, price: e.target.value })} />
                                 </div>
                                 <div className="form-group">
-                                    <label>Stock</label>
-                                    <input type="number" required value={editingProduct.stock} onChange={e => setEditingProduct({ ...editingProduct, stock: e.target.value })} />
+                                    <label>Category</label>
+                                    <input type="text" value={editingProduct.category} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })} />
                                 </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Stock (Read-only - Use Movement & Transactions to modify stock)</label>
+                                <input type="number" disabled value={editingProduct.stock} style={{ background: 'var(--bg-secondary)', cursor: 'not-allowed' }} />
                             </div>
                             <div className="form-group">
                                 <label>Image URL or Base64</label>

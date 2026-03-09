@@ -17,6 +17,7 @@ import Reports from './pages/Reports';
 import MovementTransactions from './pages/MovementTransactions';
 import StockSearchTracking from './pages/StockSearchTracking';
 import Notifications from './pages/Notifications';
+import AdminPanel from './pages/AdminPanel';
 
 
 function App() {
@@ -73,6 +74,8 @@ function App() {
         return <StockSearchTracking />;
       case 'Notifications':
         return <Notifications />;
+      case 'Admin Panel':
+        return <AdminPanel />;
       default:
         return (
           <div className="placeholder-view">

@@ -1,16 +1,15 @@
-// NOTE: This is a placeholder for depot routes
-// The full implementation should be extracted from server.js
-
 const express = require('express');
 const router = express.Router();
 const Depot = require('../models/Depot');
 const Product = require('../models/Product');
+const { requirePermission } = require('../middleware/permissions');
+const { depotAccess } = require('../middleware/depotAccess');
 
-// GET all depots
+// GET all depots (all org members can view all depots — read-only for staff)
 router.get('/', async (req, res, next) => {
   try {
-    const userId = req.userId;
-    const depots = await Depot.find({ userId }).sort({ createdAt: -1 });
+    // Use organizationId so employees see all org depots
+    const depots = await Depot.find({ userId: req.organizationId }).sort({ createdAt: -1 });
 
     res.json({
       depots: depots.map(depot => ({
@@ -31,14 +30,13 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST - Create depot
-router.post('/', async (req, res, next) => {
+// POST - Create depot (MANAGER + ADMIN)
+router.post('/', requirePermission('depots:manage'), async (req, res, next) => {
   try {
-    const userId = req.userId;
     const { name, location, capacity } = req.body;
 
     const depot = new Depot({
-      userId,
+      userId: req.organizationId, // Depot belongs to the organization
       name,
       location,
       capacity,
@@ -63,17 +61,16 @@ router.post('/', async (req, res, next) => {
 router.get('/:depotId/details', async (req, res, next) => {
   try {
     const { depotId } = req.params;
-    const userId = req.userId;
     const Transaction = require('../models/Transaction');
 
-    const depot = await Depot.findOne({ _id: depotId, userId });
+    const depot = await Depot.findOne({ _id: depotId, userId: req.organizationId });
     if (!depot) {
       return res.status(404).json({ message: 'Depot not found' });
     }
 
     // Get products that have this depot in their depotDistribution
     const products = await Product.find({
-      userId,
+      userId: req.organizationId,
       'depotDistribution.depotId': depotId
     });
 
@@ -97,7 +94,7 @@ router.get('/:depotId/details', async (req, res, next) => {
 
     // Get recent transactions for this depot (last 10)
     const recentTransactions = await Transaction.find({
-      userId,
+      userId: req.organizationId,
       $or: [
         { toDepotId: depotId },
         { fromDepotId: depotId }
@@ -134,21 +131,20 @@ router.get('/:depotId/details', async (req, res, next) => {
   }
 });
 
-// DELETE depot
-router.delete('/:id', async (req, res, next) => {
+// DELETE depot (MANAGER + ADMIN)
+router.delete('/:id', requirePermission('depots:manage'), async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.userId;
 
-    // Find and verify depot ownership
-    const depot = await Depot.findOne({ _id: id, userId });
+    // Find and verify depot belongs to this organization
+    const depot = await Depot.findOne({ _id: id, userId: req.organizationId });
     if (!depot) {
       return res.status(404).json({ message: 'Depot not found' });
     }
 
     // Find all products that have this depot in their distribution
     const affectedProducts = await Product.find({
-      userId,
+      userId: req.organizationId,
       'depotDistribution.depotId': id
     });
 
@@ -159,6 +155,10 @@ router.delete('/:id', async (req, res, next) => {
       );
       await product.save(); // Triggers pre-save hook to recalculate stock
     }
+
+    // Remove all depot assignments for this depot
+    const DepotAssignment = require('../models/DepotAssignment');
+    await DepotAssignment.deleteMany({ depotId: id });
 
     // Delete the depot
     await Depot.deleteOne({ _id: id });
@@ -171,10 +171,5 @@ router.delete('/:id', async (req, res, next) => {
     next(error);
   }
 });
-
-// TODO: Add remaining routes:
-// - GET /depots/network/metrics
-// - PUT /depots/:id
-// Extract from server.js
 
 module.exports = router;

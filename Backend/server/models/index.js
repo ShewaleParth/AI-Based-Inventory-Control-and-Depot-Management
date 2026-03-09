@@ -6,6 +6,8 @@ const Transaction = require('./Transaction');
 const Forecast = require('./Forecast');
 const Alert = require('./Alert');
 const Report = require('./Report');
+const DepotAssignment = require('./DepotAssignment');
+const StockRequest = require('./StockRequest');
 
 module.exports = {
   User,
@@ -14,5 +16,7 @@ module.exports = {
   Transaction,
   Forecast,
   Alert,
-  Report
+  Report,
+  DepotAssignment,
+  StockRequest
 };
