@@ -8,7 +8,7 @@ import {
 import axios from 'axios';
 import { EMPLOYEE_ROLES, getRoleMeta } from '../utils/permissions';
 
-const API_BASE = '/api';
+const API_BASE = '/api/v1';
 
 const AdminPanel = () => {
   const { token, isAdmin } = useAuth();
