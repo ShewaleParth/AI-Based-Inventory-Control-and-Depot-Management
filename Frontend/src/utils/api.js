@@ -83,14 +83,6 @@ export const api = {
         return response.data;
     },
 
-    addStock: async (productId, depotId, quantity, reason) => {
-        const response = await nodeApi.post(`/products/${productId}/add-stock`, {
-            depotId,
-            quantity,
-            reason
-        });
-        return response.data;
-    },
 
     // Product Details
     getProductDetails: async (id) => {

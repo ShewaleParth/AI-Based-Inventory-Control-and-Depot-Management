@@ -65,6 +65,24 @@ const Dashboard = () => {
                 />
             </div>
 
+            {/* Floating Alerts Container */}
+            <div style={{ position: 'fixed', bottom: 24, right: 24, display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 9999 }}>
+                {alerts && alerts.map(alert => (
+                    <div key={alert.id} style={{
+                        padding: '12px 20px',
+                        background: alert.type === 'error' ? 'var(--danger)' : 'var(--success)',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: 'var(--shadow-md)',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        animation: 'fadeInUp 0.3s ease forwards'
+                    }}>
+                        {alert.message}
+                    </div>
+                ))}
+            </div>
+
             <div className="main-content-row">
                 <div className="chart-section">
                     <div className="section-header">
@@ -135,39 +153,94 @@ const Dashboard = () => {
                             <div className="ai-badge">ARIMA V2.1 ACTIVE</div>
                         </div>
                         <div className="forecast-list">
-                            {topSKUs.map((sku, index) => (
-                                <div key={index} className="forecast-item">
-                                    <div className="forecast-info">
-                                        <span className="sku-label">{sku.sku}</span>
-                                        <div className="product-name">{sku.name}</div>
-                                    </div>
-                                    <div className="forecast-stats">
-                                        <div className="demand-stat">
-                                            <TrendingUp size={14} className="trend-up" />
-                                            <span>AI Prediction: <b>{sku.predictedDemand} units</b> next 7d</span>
+                            {topSKUs.map((sku, index) => {
+                                const isHigh = sku.riskLevel === 'HIGH';
+                                const isMedium = sku.riskLevel === 'MEDIUM';
+                                const isArima = sku.forecastSource === 'arima';
+
+                                // Stock health: how full is the bar relative to reorder threshold
+                                const threshold = Math.max(sku.reorderPoint || sku.calculatedReorderPoint || 1, 1);
+                                const stockPct = Math.min((sku.currentStock / (threshold * 3)) * 100, 100);
+                                // Prefer atOrBelowReorder from backend (uses actual DB reorderPoint)
+                                const belowReorder = sku.atOrBelowReorder ?? (sku.currentStock <= threshold);
+
+                                const riskClass = isHigh ? 'risk-high' : isMedium ? 'risk-medium' : 'risk-safe';
+                                const barClass = isHigh ? 'bar-high' : isMedium ? 'bar-medium' : 'bar-safe';
+
+                                return (
+                                    <div key={index} className={`forecast-item ${isHigh ? 'forecast-item--urgent' : ''}`}>
+                                        {/* Left: Product identity */}
+                                        <div className="forecast-info">
+                                            <div className="forecast-badges">
+                                                <span className={`fi-source-badge ${isArima ? 'arima' : 'estimated'}`}>
+                                                    {isArima ? '⬡ ARIMA' : '~ Est.'}
+                                                </span>
+                                                <span className={`fi-risk-badge ${riskClass}`}>
+                                                    {sku.riskLevel}
+                                                </span>
+                                            </div>
+                                            <span className="sku-label">{sku.sku}</span>
+                                            <div className="product-name">{sku.name}</div>
+                                            {sku.aiMessage && (
+                                                <div className="fi-ai-message">{sku.aiMessage}</div>
+                                            )}
                                         </div>
-                                    </div>
-                                    <div className="forecast-action">
-                                        <div className="stock-level">
-                                            <div className="stock-label-text">Inventory: {sku.currentStock}</div>
-                                            <div className="stock-bar">
-                                                <div
-                                                    className="stock-fill"
-                                                    style={{ width: `${Math.min((sku.currentStock / (sku.predictedDemand || 1)) * 100, 100)}%` }}
-                                                ></div>
+
+                                        {/* Middle: Demand prediction + stockout */}
+                                        <div className="forecast-stats">
+                                            <div className="demand-stat">
+                                                <TrendingUp size={14} className="trend-up" />
+                                                <span>7d demand: <b>{sku.predictedDemand} units</b></span>
+                                            </div>
+                                            <div className={`fi-days-stat ${isHigh ? 'text-danger' : isMedium ? 'text-warning' : 'text-muted'}`}>
+                                                <span>
+                                                    {sku.currentStock === 0
+                                                        ? '⚠ Out of stock'
+                                                        : sku.daysToStockOut >= 99
+                                                            ? 'Stocks out in 99+ days'
+                                                            : `Stocks out in ${sku.daysToStockOut}d`}
+                                                </span>
                                             </div>
                                         </div>
-                                        <button
-                                            className="reorder-btn"
-                                            onClick={() => handleReorder(sku.name)}
-                                        >
-                                            Quick Reorder
-                                        </button>
+
+                                        {/* Right: Stock bar + reorder info + button */}
+                                        <div className="forecast-action">
+                                            <div className="stock-level">
+                                                <div className="stock-label-row">
+                                                    <span className="stock-label-text">
+                                                        Stock: <b>{sku.currentStock}</b>
+                                                    </span>
+                                                    <span className={`stock-reorder-label ${belowReorder ? 'text-danger' : 'text-muted'}`}>
+                                                        Reorder @ {sku.calculatedReorderPoint ?? sku.reorderPoint}
+                                                    </span>
+                                                </div>
+                                                <div className="stock-bar">
+                                                    <div
+                                                        className={`stock-fill ${barClass}`}
+                                                        style={{ width: `${Math.max(stockPct, 2)}%` }}
+                                                    />
+                                                    {/* Reorder threshold marker */}
+                                                    <div
+                                                        className="reorder-marker"
+                                                        style={{ left: `${Math.min((threshold / (threshold * 3)) * 100, 97)}%` }}
+                                                    />
+                                                </div>
+                                                <div className="fi-reorder-hint">
+                                                    Suggest reorder: <b>{sku.recommendedReorder} units</b>
+                                                </div>
+                                            </div>
+                                            <button
+                                                className={`reorder-btn ${isHigh ? 'reorder-btn--urgent' : ''}`}
+                                                onClick={() => handleReorder(sku)}
+                                            >
+                                                {isHigh ? '⚡ Reorder Now' : 'Quick Reorder'}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                             {topSKUs.length === 0 && (
-                                <div className="no-data-placeholder"> No demand intelligence data available yet. </div>
+                                <div className="no-data-placeholder">No demand intelligence data available yet.</div>
                             )}
                         </div>
                     </div>

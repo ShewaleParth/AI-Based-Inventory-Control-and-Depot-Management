@@ -86,7 +86,7 @@ const StockSearchTracking = () => {
         // Depot filter
         if (filters.depot !== 'all') {
             const hasDepot = product.depotDistribution?.some(
-                d => d.depotId === filters.depot
+                d => d.depotId?.toString() === filters.depot
             );
             if (!hasDepot) return false;
         }

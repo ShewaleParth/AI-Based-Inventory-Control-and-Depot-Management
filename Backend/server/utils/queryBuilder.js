@@ -18,9 +18,10 @@ async function paginate(Model, reqQuery, pop = null) {
 
     // 2. Convert operator syntax to MongoDB operators
     //    URL: ?qty[gte]=10  becomes  { qty: { $gte: 10 } }
+    //    Only replaces if not already prefixed with $.
     const queryStr = JSON.stringify(filters).replace(
-        /\b(gte|gt|lte|lt|eq|ne|in|nin)\b/g,
-        op => `$${op}`
+        /"(gte|gt|lte|lt|eq|ne|in|nin)"\s*:/g,
+        '"$$$1":'
     );
     const parsedFilters = JSON.parse(queryStr);
 

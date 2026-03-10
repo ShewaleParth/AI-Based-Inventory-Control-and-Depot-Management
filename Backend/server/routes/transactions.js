@@ -210,6 +210,12 @@ router.post('/stock-out', requirePermission('transfers:create'), async (req, res
 
     const previousStock = product.stock;
 
+    // Validate total stock BEFORE mutating — prevents saving negative stock to MongoDB
+    const newStock = previousStock - parseInt(quantity);
+    if (newStock < 0) {
+      return res.status(400).json({ message: 'Insufficient total stock' });
+    }
+
     product.depotDistribution[depotDistIndex].quantity -= parseInt(quantity);
     product.depotDistribution[depotDistIndex].lastUpdated = new Date();
 
@@ -218,12 +224,6 @@ router.post('/stock-out', requirePermission('transfers:create'), async (req, res
     }
 
     await product.save();
-
-    const newStock = product.stock;
-
-    if (newStock < 0) {
-      return res.status(400).json({ message: 'Insufficient total stock' });
-    }
 
     // Update depot
     const depotProductIndex = depot.products.findIndex(

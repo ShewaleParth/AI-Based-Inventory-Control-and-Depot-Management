@@ -68,25 +68,123 @@ router.get('/stats', async (req, res, next) => {
   }
 });
 
-// GET top SKUs - formatted for frontend
+// GET top SKUs - enriched with real ARIMA forecasts where available
 router.get('/top-skus', async (req, res, next) => {
   try {
     const userId = req.organizationId;
 
+    // Fetch all products with fields needed for risk calculation
     const products = await Product.find({ userId })
-      .sort({ stock: -1 })
-      .limit(10)
-      .select('sku name stock category dailySales weeklySales');
+      .select('_id sku name stock category reorderPoint dailySales weeklySales leadTime price status depotDistribution')
+      .lean();
 
-    const topSKUs = products.map(p => ({
-      sku: p.sku,
-      name: p.name,
-      currentStock: p.stock,
-      predictedDemand: Math.round((p.dailySales || 5) * 7), // 7 days prediction
-      category: p.category
-    }));
+    // Fetch all ARIMA forecasts indexed by SKU for O(1) lookup
+    const forecasts = await Forecast.find({ userId })
+      .select('sku currentStock forecastData aiInsights priorityPred stockStatusPred alert')
+      .lean();
 
-    res.json({ topSKUs });
+    const forecastBySku = {};
+    for (const f of forecasts) {
+      forecastBySku[f.sku] = f;
+    }
+
+    // Merge product data with forecast data
+    const enriched = products.map(p => {
+      const dailySales = Number(p.dailySales || 5);
+      const weeklySales = Number(p.weeklySales || 35);
+      const leadTime = Number(p.leadTime || 7);
+      const stock = Number(p.stock || 0);
+
+      // Product-level calculations (always available as fallback)
+      const avgDailyDemand = (dailySales * 0.7) + ((weeklySales / 7) * 0.3);
+      const daysToStockOut = avgDailyDemand > 0
+        ? Math.max(0, Math.round(stock / avgDailyDemand))
+        : 99;
+      const safetyStock = Math.round(avgDailyDemand * leadTime * 0.5);
+      const calculatedReorderPoint = Math.round((avgDailyDemand * leadTime) + safetyStock);
+      const estimatedReorderQty = Math.round(avgDailyDemand * 30);
+
+      // Risk level — integrate BOTH the DB reorderPoint and days-to-stockout
+      // A product at or below reorderPoint is always at least MEDIUM, and HIGH if also urgent
+      const dbReorderPoint = Number(p.reorderPoint || 0);
+      const atOrBelowReorder = stock <= dbReorderPoint;
+
+      let riskLevel = 'SAFE';
+      if (stock === 0 || daysToStockOut <= leadTime || (atOrBelowReorder && daysToStockOut <= leadTime * 2)) {
+        riskLevel = 'HIGH';
+      } else if (atOrBelowReorder || daysToStockOut <= leadTime * 2) {
+        riskLevel = 'MEDIUM';
+      }
+
+      const forecast = forecastBySku[p.sku];
+
+      if (forecast && forecast.forecastData && forecast.forecastData.length > 0) {
+        // ARIMA forecast available — use real ML data
+        const next7Days = forecast.forecastData.slice(0, 7);
+        const predictedDemand = Math.round(
+          next7Days.reduce((sum, d) => sum + (d.predicted || 0), 0)
+        );
+        const aiInsights = forecast.aiInsights || {};
+
+        // Map ML priority to our risk levels
+        const mlRisk = (forecast.priorityPred === 'Very High' || forecast.priorityPred === 'High')
+          ? 'HIGH'
+          : forecast.priorityPred === 'Medium' ? 'MEDIUM' : riskLevel;
+
+        return {
+          productId: p._id,
+          sku: p.sku,
+          name: p.name,
+          category: p.category,
+          currentStock: stock,
+          reorderPoint: dbReorderPoint,
+          atOrBelowReorder,
+          calculatedReorderPoint,
+          predictedDemand,
+          recommendedReorder: aiInsights.recommended_reorder || estimatedReorderQty,
+          daysToStockOut: aiInsights.eta_days != null ? aiInsights.eta_days : daysToStockOut,
+          riskLevel: mlRisk,
+          stockStatus: forecast.stockStatusPred || p.status,
+          alert: forecast.alert || '',
+          forecastSource: 'arima',
+          aiMessage: aiInsights.message || null,
+          status: p.status,
+          depotDistribution: p.depotDistribution || []
+        };
+      } else {
+        // No ARIMA forecast yet — product-level math fallback
+        return {
+          productId: p._id,
+          sku: p.sku,
+          name: p.name,
+          category: p.category,
+          currentStock: stock,
+          reorderPoint: dbReorderPoint,
+          atOrBelowReorder,
+          calculatedReorderPoint,
+          predictedDemand: Math.round(avgDailyDemand * 7),
+          recommendedReorder: estimatedReorderQty,
+          daysToStockOut,
+          riskLevel,
+          stockStatus: p.status,
+          alert: '',
+          forecastSource: 'estimated',
+          aiMessage: null,
+          status: p.status,
+          depotDistribution: p.depotDistribution || []
+        };
+      }
+    });
+
+    // Sort: HIGH risk first, then by daysToStockOut ascending (most urgent on top)
+    const riskOrder = { HIGH: 0, MEDIUM: 1, SAFE: 2 };
+    enriched.sort((a, b) => {
+      const riskDiff = (riskOrder[a.riskLevel] ?? 2) - (riskOrder[b.riskLevel] ?? 2);
+      if (riskDiff !== 0) return riskDiff;
+      return a.daysToStockOut - b.daysToStockOut;
+    });
+
+    res.json({ topSKUs: enriched.slice(0, 10) });
   } catch (error) {
     next(error);
   }

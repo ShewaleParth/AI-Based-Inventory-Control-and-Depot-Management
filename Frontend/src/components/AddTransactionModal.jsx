@@ -4,10 +4,10 @@ import { api } from '../utils/api';
 import { riskApi } from './SupplierRiskRadar/riskApi';
 import '../styles/TransactionModal.css';
 
-const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess }) => {
-    const [activeTab, setActiveTab] = useState('stock-in');
+const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess, initialTab = 'stock-in', initialQuantity = '' }) => {
+    const [activeTab, setActiveTab] = useState(initialTab);
     const [formData, setFormData] = useState({
-        quantity: '',
+        quantity: initialQuantity,
         depotId: '',
         fromDepotId: '',
         toDepotId: '',
@@ -18,6 +18,17 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess }) =>
     const [error, setError] = useState(null);
     const [preview, setPreview] = useState(null);
     const [riskWarning, setRiskWarning] = useState(null);
+
+    // Apply initial configuration every time the modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setActiveTab(initialTab);
+            setFormData(prev => ({
+                ...prev,
+                quantity: initialQuantity || ''
+            }));
+        }
+    }, [isOpen, initialTab, initialQuantity]);
 
     useEffect(() => {
         if (isOpen && depots.length > 0 && !formData.depotId) {
@@ -34,7 +45,7 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess }) =>
 
         if (activeTab === 'stock-in') {
             // Get depot-specific stock
-            const depotStock = product.depotDistribution?.find(d => d.depotId === formData.depotId);
+            const depotStock = product.depotDistribution?.find(d => d.depotId?.toString() === formData.depotId);
             const currentDepotStock = depotStock?.quantity || 0;
             const newDepotStock = currentDepotStock + qty;
             const newTotalStock = product.stock + qty;
@@ -52,7 +63,7 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess }) =>
             });
         } else if (activeTab === 'stock-out') {
             // Get depot-specific stock
-            const depotStock = product.depotDistribution?.find(d => d.depotId === formData.depotId);
+            const depotStock = product.depotDistribution?.find(d => d.depotId?.toString() === formData.depotId);
             const currentDepotStock = depotStock?.quantity || 0;
             const newDepotStock = currentDepotStock - qty;
             const newTotalStock = product.stock - qty;
@@ -70,8 +81,8 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess }) =>
                 depotName: depots.find(d => (d._id || d.id) === formData.depotId)?.name
             });
         } else if (activeTab === 'transfer') {
-            const fromDepot = product.depotDistribution?.find(d => d.depotId === formData.fromDepotId);
-            const toDepot = product.depotDistribution?.find(d => d.depotId === formData.toDepotId);
+            const fromDepot = product.depotDistribution?.find(d => d.depotId?.toString() === formData.fromDepotId);
+            const toDepot = product.depotDistribution?.find(d => d.depotId?.toString() === formData.toDepotId);
             const fromQty = fromDepot?.quantity || 0;
             const toQty = toDepot?.quantity || 0;
 

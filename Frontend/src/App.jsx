@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -19,10 +20,9 @@ import StockSearchTracking from './pages/StockSearchTracking';
 import Notifications from './pages/Notifications';
 import AdminPanel from './pages/AdminPanel';
 
-
-function App() {
+function AppContent() {
+  const { activeItem, setActiveItem } = useNavigation();
   const [theme, setTheme] = useState('light');
-  const [activeItem, setActiveItem] = useState('Dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -87,66 +87,69 @@ function App() {
   };
 
   return (
+    <ProtectedRoute>
+      <div className="app-container">
+        {/* Sidebar Overlay for Mobile */}
+        <div
+          className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
+          onClick={closeSidebar}
+        />
+
+        <Sidebar
+          activeItem={activeItem}
+          setActiveItem={setActiveItem}
+          isMobileOpen={isSidebarOpen}
+          isCollapsed={isSidebarCollapsed}
+          onClose={closeSidebar}
+          onToggleCollapse={toggleSidebarCollapse}
+        />
+
+        <div className={`main-layout ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+          <Header
+            theme={theme}
+            toggleTheme={toggleTheme}
+            title={activeItem}
+            onMenuClick={toggleSidebar}
+          />
+          <main className="content">
+            {renderContent()}
+          </main>
+        </div>
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+function App() {
+  return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/verify-otp" element={<VerifyOTP />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+      <NavigationProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <div className="app-container">
-                  {/* Sidebar Overlay for Mobile */}
-                  <div
-                    className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
-                    onClick={closeSidebar}
-                  />
+            {/* Protected App Shell — all pages rendered via activeItem switch */}
+            <Route path="/" element={<AppContent />} />
 
-                  <Sidebar
-                    activeItem={activeItem}
-                    setActiveItem={setActiveItem}
-                    isMobileOpen={isSidebarOpen}
-                    isCollapsed={isSidebarCollapsed}
-                    onClose={closeSidebar}
-                    onToggleCollapse={toggleSidebarCollapse}
-                  />
+            {/* Product Details Route */}
+            <Route
+              path="/product/:productId"
+              element={
+                <ProtectedRoute>
+                  <ProductDetailsView />
+                </ProtectedRoute>
+              }
+            />
 
-                  <div className={`main-layout ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                    <Header
-                      theme={theme}
-                      toggleTheme={toggleTheme}
-                      title={activeItem}
-                      onMenuClick={toggleSidebar}
-                    />
-                    <main className="content">
-                      {renderContent()}
-                    </main>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Product Details Route */}
-          <Route
-            path="/product/:productId"
-            element={
-              <ProtectedRoute>
-                <ProductDetailsView />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Catch all - redirect to login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
+            {/* Catch all - redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
+      </NavigationProvider>
     </AuthProvider>
   );
 }

@@ -1251,6 +1251,175 @@ input {
   font-weight: 600;
 }
 
+.reorder-btn--urgent {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  animation: pulse-urgent 2s infinite;
+}
+
+@keyframes pulse-urgent {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Demand Intelligence new elements */
+.forecast-item--urgent {
+  border-left: 3px solid var(--danger);
+  background: linear-gradient(to right, rgba(239, 68, 68, 0.04), transparent);
+}
+
+.forecast-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+/* Source badge: ARIMA (purple) vs Estimated (muted) */
+.fi-source-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.fi-source-badge.arima {
+  background: var(--primary-glow);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.fi-source-badge.estimated {
+  background: var(--bg-main);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Risk badge: HIGH / MEDIUM / SAFE */
+.fi-risk-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fi-risk-badge.risk-high {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.fi-risk-badge.risk-medium {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.fi-risk-badge.risk-safe {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Days-to-stockout line */
+.fi-days-stat {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.fi-days-stat.text-danger {
+  color: #ef4444;
+}
+
+.fi-days-stat.text-warning {
+  color: #f59e0b;
+}
+
+.fi-days-stat.text-muted {
+  color: var(--text-muted);
+}
+
+/* Stock bar color variants */
+.stock-fill.bar-high {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.stock-fill.bar-medium {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.stock-fill.bar-safe {
+  background: linear-gradient(90deg, #10b981, var(--primary));
+}
+
+/* Stock label row (Stock: X  |  Reorder @ Y) */
+.stock-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stock-label-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.stock-reorder-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stock-reorder-label.text-danger {
+  color: #ef4444;
+}
+
+.stock-reorder-label.text-muted {
+  color: var(--text-muted);
+}
+
+/* Reorder threshold tick mark on the stock bar */
+.stock-bar {
+  position: relative;
+  overflow: visible !important;
+}
+
+.reorder-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: calc(100% + 6px);
+  background: var(--warning);
+  border-radius: 1px;
+  opacity: 0.8;
+}
+
+/* Suggested reorder quantity hint */
+.fi-reorder-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* AI message from ML model */
+.fi-ai-message {
+  font-size: 11px;
+  color: var(--primary);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+
 .ai-card.alert {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigation } from '../context/NavigationContext';
 import { 
     TrendingUp, TrendingDown, ArrowRightLeft, Package, 
     Filter, Download, Calendar, Search, RefreshCw,
@@ -28,6 +29,10 @@ const MovementTransactions = () => {
     const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [productSearch, setProductSearch] = useState('');
+    const [initialTab, setInitialTab] = useState('stock-in');
+    const [initialQuantity, setInitialQuantity] = useState('');
+    const { navigationState, setNavigationState } = useNavigation();
+    const autoOpenHandled = useRef(false);
     const [stats, setStats] = useState({
         totalTransactions: 0,
         stockIn: 0,
@@ -38,6 +43,29 @@ const MovementTransactions = () => {
     useEffect(() => {
         fetchData();
     }, [filters]);
+
+    // Auto-open modal when navigated from Dashboard "Reorder" button
+    useEffect(() => {
+        if (!navigationState?.openNewTransaction || autoOpenHandled.current) return;
+        
+        // Wait until products are loaded to set the selected product
+        if (products.length > 0) {
+            autoOpenHandled.current = true;
+            setInitialTab(navigationState.defaultTab || 'stock-in');
+            setInitialQuantity(navigationState.suggestedQty?.toString() || '');
+            
+            if (navigationState.productId) {
+                const match = products.find(
+                    p => (p._id || p.id)?.toString() === navigationState.productId?.toString()
+                );
+                if (match) setSelectedProduct(match);
+            }
+            
+            setIsModalOpen(true);
+            setNavigationState(null); // Clear state so we don't re-trigger
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigationState, products]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -251,7 +279,7 @@ const MovementTransactions = () => {
                             ) : (
                                 filteredProducts.map(product => (
                                     <div 
-                                        key={product.id} 
+                                        key={product.id || product._id} 
                                         className="product-card"
                                         onClick={() => handleProductSelect(product)}
                                     >
@@ -287,13 +315,19 @@ const MovementTransactions = () => {
                 onClose={() => {
                     setIsModalOpen(false);
                     setSelectedProduct(null);
+                    setInitialTab('stock-in');
+                    setInitialQuantity('');
                 }}
                 product={selectedProduct}
                 depots={depots}
+                initialTab={initialTab}
+                initialQuantity={initialQuantity}
                 onSuccess={() => {
                     fetchData();
                     setIsModalOpen(false);
                     setSelectedProduct(null);
+                    setInitialTab('stock-in');
+                    setInitialQuantity('');
                 }}
             />
 

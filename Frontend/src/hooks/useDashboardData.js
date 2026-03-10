@@ -127,9 +127,65 @@ export const useDashboardData = () => {
         return () => clearInterval(interval);
     }, [fetchData]);
 
-    const handleReorder = useCallback(async (item) => {
-        console.log(`Reordering ${item}...`);
-    }, []);
+    // 1-Click Auto-Reorder directly from the Dashboard
+    const handleReorder = useCallback(async (sku) => {
+        try {
+            setLoading(true);
+            
+            // Determine which depot gets the stock
+            const targetDepot = selectedDepot !== 'all' 
+                ? selectedDepot 
+                : (sku.depotDistribution?.length > 0 ? sku.depotDistribution[0].depotId : null);
+
+            if (!targetDepot) {
+                alert(`Cannot 1-click reorder ${sku.name}: No depot assigned. Please use the Movement Transactions page.`);
+                return;
+            }
+
+            const qty = sku.recommendedReorder || 50;
+
+            await api.addStockIn({
+                productId: sku.productId,
+                quantity: qty,
+                depotId: typeof targetDepot === 'object' ? (targetDepot._id || targetDepot.id) : targetDepot,
+                reason: 'Auto Reorder',
+                notes: 'Demand Intelligence 1-Click Reorder'
+            });
+
+            // Add a temporary success alert to the dashboard
+            const alertId = Date.now();
+            setAlerts(prev => [{
+                id: alertId,
+                type: 'info',
+                message: `Successfully reordered ${qty} units of ${sku.name}.`
+            }, ...prev]);
+
+            // Auto-dismiss alert
+            setTimeout(() => {
+                setAlerts(prev => prev.filter(a => a.id !== alertId));
+            }, 4000);
+
+            // Refresh the dashboard data strictly
+            await fetchData();
+
+        } catch (error) {
+            console.error('Reorder failed:', error);
+            
+            const errId = Date.now();
+            setAlerts(prev => [{
+                id: errId,
+                type: 'error',
+                message: `Failed to reorder ${sku.name}.`
+            }, ...prev]);
+            
+            setTimeout(() => {
+                setAlerts(prev => prev.filter(a => a.id !== errId));
+            }, 4000);
+            
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedDepot, fetchData]);
 
     return {
         metrics,
