@@ -16,6 +16,7 @@ import traceback
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__))))
 from supplier_intelligence.supplier_routes import supplier_routes, init_db
+from supplier_intelligence.risk_score_engine import get_all_supplier_scores, get_supplier_history
 
 warnings.filterwarnings('ignore', category=ConvergenceWarning)
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -51,7 +52,7 @@ if not MONGODB_URI:
 client = MongoClient(MONGODB_URI)
 db = client.get_database() # Uses database name from URI or defaults
 if not db.name or db.name == 'test':
-    db = client['sangrahak']
+    db = client['animesh']
 
 print(f" Connected to MongoDB Database: {db.name}")
 
@@ -1002,10 +1003,54 @@ def get_forecast_by_sku(sku):
 
 # Register Supplier Intelligence Routes
 # Pass the MongoDB db so supplier routes can read live products data
-init_db(db)
-app.register_blueprint(supplier_routes, url_prefix='/api/supplier')
+# init_db(db)
+# app.register_blueprint(supplier_routes, url_prefix='/api/supplier')
 
+# ─── ROUTE 1: All supplier risk scores ────────────────────────────────
+@app.route('/api/supplier/risk-overview', methods=['GET'])
+def supplier_risk_overview():
+    try:
+        scores = get_all_supplier_scores(MONGODB_URI)
+        return jsonify(scores), 200
+    except Exception as e:
+        print("!!! ERROR IN risk-overview API !!!")
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'details': traceback.format_exc()}), 500
 
+# ─── ROUTE 2: Aggregated KPI metrics ──────────────────────────────────
+@app.route('/api/supplier/kpis', methods=['GET'])
+def supplier_kpis():
+    try:
+        scores = get_all_supplier_scores(MONGODB_URI)
+        active_risk  = sum(1 for s in scores if s['status'] in ('HIGH','CRITICAL'))
+        
+        if scores:
+            # Normalized display factors for KPIs
+            avg_delay    = round(sum(s['delayRiskScore'] for s in scores) / len(scores) * 0.15, 1)
+            quality_fail = round(sum(s['qualityRiskScore'] for s in scores) / len(scores) * 0.05, 1)
+        else:
+            avg_delay, quality_fail = 0, 0
+            
+        loss_risk    = active_risk * 10000
+        return jsonify({
+            'activeRiskEvents':       active_risk,
+            'avgDeliveryDelayDays':   avg_delay,
+            'qualityFailurePercent':  quality_fail,
+            'procurementLossRiskINR': loss_risk,
+        }), 200
+    except Exception as e:
+        print("!!! ERROR IN supplier-kpis API !!!")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+# ─── ROUTE 3: 30-day history for one supplier ─────────────────────────
+@app.route('/api/supplier/history/<supplier_name>', methods=['GET'])
+def supplier_history(supplier_name):
+    try:
+        history = get_supplier_history(supplier_name.strip(), MONGODB_URI, db_name=db.name)
+        return jsonify({'trend': history}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 if __name__ == '__main__':
     print("Starting ML Prediction API...")
 

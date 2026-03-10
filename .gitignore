@@ -1,5 +1,5 @@
 # Models (Large files)
-Models/
+/Models/
 arima_models_dict.pkl
 *.pkl
 *.h5

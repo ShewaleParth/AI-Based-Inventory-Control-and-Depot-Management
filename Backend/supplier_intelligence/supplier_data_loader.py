@@ -43,9 +43,9 @@ def load_supplier_data(file_path="supplier_transactions.csv"):
 if __name__ == "__main__":
     # Test loading
     try:
-        data = load_supplier_data("d:/Major/Backend/supplier_intelligence/supplier_transactions.csv")
+        data = load_supplier_data("d:/Major/AI-Based-Inevtnory-Control-and-Depot-Management/Backend/supplier_intelligence/supplier_transactions.csv")
         print("Data loaded and processed successfully.")
         print(data.head())
-        data.to_csv("d:/Major/Backend/supplier_intelligence/processed_supplier_data.csv", index=False)
+        data.to_csv("d:/Major/AI-Based-Inevtnory-Control-and-Depot-Management/Backend/supplier_intelligence/processed_supplier_data.csv", index=False)
     except Exception as e:
         print(f"Error: {e}")

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
+import { SupplierRiskProvider } from './context/SupplierRiskContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -13,7 +14,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyOTP from './pages/VerifyOTP';
 import ForgotPassword from './pages/ForgotPassword';
-import ForecastingAnalysis from './pages/ForecastingAnalysis';
+import SupplierRiskRadar from './pages/SupplierRiskRadar';
 import Reports from './pages/Reports';
 import MovementTransactions from './pages/MovementTransactions';
 import StockSearchTracking from './pages/StockSearchTracking';
@@ -65,7 +66,7 @@ function AppContent() {
       case 'Depots':
         return <Depots />;
       case 'Supplier Risk Radar':
-        return <ForecastingAnalysis />;
+        return <SupplierRiskRadar />;
       case 'Reports Export':
         return <Reports />;
       case 'Movement & Transactions':
@@ -123,33 +124,35 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <NavigationProvider>
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/verify-otp" element={<VerifyOTP />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+      <SupplierRiskProvider>
+        <NavigationProvider>
+          <Router>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/verify-otp" element={<VerifyOTP />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            {/* Protected App Shell — all pages rendered via activeItem switch */}
-            <Route path="/" element={<AppContent />} />
+              {/* Protected App Shell — all pages rendered via activeItem switch */}
+              <Route path="/" element={<AppContent />} />
 
-            {/* Product Details Route */}
-            <Route
-              path="/product/:productId"
-              element={
-                <ProtectedRoute>
-                  <ProductDetailsView />
-                </ProtectedRoute>
-              }
-            />
+              {/* Product Details Route */}
+              <Route
+                path="/product/:productId"
+                element={
+                  <ProtectedRoute>
+                    <ProductDetailsView />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Catch all - redirect to login */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </Router>
-      </NavigationProvider>
+              {/* Catch all - redirect to login */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </Router>
+        </NavigationProvider>
+      </SupplierRiskProvider>
     </AuthProvider>
   );
 }

@@ -75,4 +75,4 @@ def generate_sample_data(filename="supplier_transactions.csv"):
     print(f"Sample data generated: {filename}")
 
 if __name__ == "__main__":
-    generate_sample_data("d:/Major/Backend/supplier_intelligence/supplier_transactions.csv")
+    generate_sample_data("d:/Major/AI-Based-Inevtnory-Control-and-Depot-Management/Backend/supplier_intelligence/supplier_transactions.csv")

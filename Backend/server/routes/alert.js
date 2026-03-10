@@ -72,6 +72,63 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ─── NEW: Server-Sent Events stream ───────────────────────────────────
+const sseClients = new Set();
+
+router.get('/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.flushHeaders();
+
+  // Send last 5 alerts immediately on connect
+  Alert.find().sort({ createdAt: -1 }).limit(5).then(alerts => {
+    alerts.reverse().forEach(a => {
+      res.write(`data: ${JSON.stringify(a)}\n\n`);
+    });
+  });
+
+  // Keep connection alive with a heartbeat every 25 seconds
+  const heartbeat = setInterval(() => res.write(':heartbeat\n\n'), 25000);
+
+  sseClients.add(res);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+// ─── Broadcast new alert to all SSE clients ────────────────────────────
+const broadcastAlert = (alert) => {
+  const payload = `data: ${JSON.stringify(alert)}\n\n`;
+  sseClients.forEach(client => client.write(payload));
+};
+
+// ─── NEW: MongoDB Change Stream for Real-time Alerts ───────────────────
+// This automatically pushes new alerts to the frontend pulse panel
+const setupChangeStream = () => {
+  try {
+    const watchStream = Alert.watch();
+    watchStream.on('change', (change) => {
+      if (change.operationType === 'insert') {
+        console.log('🔔 New Alert Detected via Change Stream');
+        broadcastAlert(change.fullDocument);
+      }
+    });
+
+    watchStream.on('error', (err) => {
+      console.warn('⚠️ Change Stream warning (likely no replica set):', err.message);
+    });
+  } catch (err) {
+    console.error('❌ Failed to setup Alert Change Stream:', err.message);
+  }
+};
+
+// Initialize Change Stream
+setupChangeStream();
+
+
 // Get alert by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -241,4 +298,7 @@ router.patch('/mark-all-read', async (req, res) => {
   }
 });
 
+
+
 module.exports = router;
+module.exports.broadcastAlert = broadcastAlert;

@@ -124,7 +124,15 @@ v1Router.use('/forecasts', authenticateToken, forecastRoutes);
 v1Router.use('/transactions', authenticateToken, transactionRoutes);
 v1Router.use('/dashboard', authenticateToken, dashboardRoutes);
 v1Router.use('/reports', authenticateToken, reportsRoutes);
-v1Router.use('/alerts', authenticateToken, alertRoutes);
+
+// Bypass auth for /stream and use it for /alerts
+const alertAuthMiddleware = (req, res, next) => {
+  if (req.path === '/stream') return next();
+  return authenticateToken(req, res, next);
+};
+v1Router.use('/alerts', alertAuthMiddleware, alertRoutes);
+app.use('/api/alerts', alertAuthMiddleware, alertRoutes); // Alias for Action plan curl tests
+
 v1Router.use('/admin', authenticateToken, adminRoutes);
 v1Router.use('/stock-requests', authenticateToken, stockRequestRoutes);
 

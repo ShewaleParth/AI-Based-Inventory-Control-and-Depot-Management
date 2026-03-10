@@ -90,3 +90,111 @@ if __name__ == "__main__":
     engine = RiskScoreEngine()
     result = engine.predict_risk("Apex Logistics", "Electronics", 500, 50)
     print(result)
+
+# ─── ADD THESE TWO FUNCTIONS TO THE BOTTOM OF risk_score_engine.py ───
+
+import os, joblib, pandas as pd
+from pymongo import MongoClient
+from datetime import datetime, timedelta
+
+MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
+
+def _load_models():
+    delay_model   = joblib.load(os.path.join(MODEL_DIR, 'delay_risk_model.pkl'))
+    quality_model = joblib.load(os.path.join(MODEL_DIR, 'quality_risk_model.pkl'))
+    fulfil_model  = joblib.load(os.path.join(MODEL_DIR, 'fulfillment_risk_model.pkl'))
+    return delay_model, quality_model, fulfil_model
+
+def get_all_supplier_scores(mongo_uri, db_name='sangrahak'):
+    """
+    Queries MongoDB for all supplier transaction records,
+    runs ML inference on each, returns list of scored dicts.
+    """
+    client = MongoClient(mongo_uri)
+    # Extract DB name from URI or use provided name
+    db = client.get_database()
+    if not db.name or db.name == 'test':
+        db = client[db_name]
+    
+    print(f"Aggregating supplier scores from DB: {db.name}")
+
+    # Aggregate raw performance metrics per supplier from transactions
+    pipeline = [
+        { '$group': {
+            '_id': '$supplier',
+            'category':    { '$first': '$category' },
+            'avgDelay':    { '$avg': '$delay_days' },
+            'qualityRej':  { '$avg': '$quality_rejection_rate' },
+            'fulfillPct':  { '$avg': '$fulfillment_rate' },
+            'orderCount':  { '$sum': 1 },
+        }},
+        { '$match': { '_id': { '$ne': None } } } # Filter out null suppliers
+    ]
+    raw = list(db.transactions.aggregate(pipeline))
+
+    delay_m, quality_m, fulfil_m = _load_models()
+    results = []
+
+    for r in raw:
+        supplier_name = r['_id']
+        category_name = r.get('category', 'Unknown')
+        
+        try:
+            s_id = delay_m['le_supplier'].transform([supplier_name])[0]
+        except:
+            s_id = 0
+            
+        try:
+            c_id = delay_m['le_category'].transform([category_name])[0]
+        except:
+            c_id = 0
+
+        features = pd.DataFrame([{
+            'supplier_id': s_id,
+            'category_id': c_id,
+            'ordered_qty': r.get('orderCount', 100),
+            'base_price': 500,
+            'payment_risk': 0
+        }], columns=['supplier_id', 'category_id', 'ordered_qty', 'base_price', 'payment_risk'])
+
+        delay_pred = float(delay_m['model'].predict(features)[0])
+        quality_pred = float(quality_m['model'].predict(features)[0])
+        fulfillment_pred = float(fulfil_m['model'].predict(features)[0])
+
+        delay_score   = round(min(max(delay_pred * 6.6, 0), 100))
+        quality_score = round(min(max(quality_pred * 1000, 0), 100))
+        fulfil_score  = round(min(max((1.0 - fulfillment_pred) * 500, 0), 100))
+
+        overall = round(delay_score * 0.40 + quality_score * 0.30 +
+                        fulfil_score * 0.30)
+
+        status = ('CRITICAL' if overall >= 70 else
+                  'HIGH'     if overall >= 45 else
+                  'MEDIUM'   if overall >= 25 else 'LOW')
+
+        results.append({
+            'supplierName':    r['_id'],
+            'category':        category_name,
+            'delayRiskScore':  delay_score,
+            'qualityRiskScore':quality_score,
+            'fulfillmentRate': (100 - fulfil_score), # Show as fulfillment % (positive metric)
+            'overallRiskScore':overall,
+            'status':          status,
+            'lastUpdated':     datetime.utcnow().isoformat() + 'Z',
+        })
+
+    results.sort(key=lambda x: x['overallRiskScore'], reverse=True)
+    return results
+
+def get_supplier_history(supplier_name, mongo_uri, db_name='sangrahak'):
+    """Returns 30-day daily risk trend for one supplier."""
+    client = MongoClient(mongo_uri)
+    db     = client[db_name]
+    cutoff = datetime.utcnow() - timedelta(days=45)
+    
+    docs = list(db.supplier_risk_snapshots.find(
+        { 'supplierName': supplier_name, 'date': { '$gte': cutoff } },
+        { '_id':0, 'date':1, 'delay':1, 'qualityRisk':1, 'fulfillment':1, 'overallScore':1 }
+    ).sort('date', 1))
+
+    return docs
