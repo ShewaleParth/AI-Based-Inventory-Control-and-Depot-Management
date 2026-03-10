@@ -12,7 +12,8 @@ const connectDB = require('./config/database');
 
 // Middleware
 const authenticateToken = require('./middleware/auth');
-const errorHandler = require('./middleware/errorHandler');
+const { errorHandler } = require('./middleware/errorHandler');
+const logger = require('./config/logger');
 
 // Services
 const { initializeEmailService } = require('./services/emailService');
@@ -76,18 +77,21 @@ initializeEmailService();
 // Connect to database
 connectDB();
 
-// Health check endpoint (public)
+// Health check endpoint (public, not versioned)
 app.get('/api/health', async (req, res) => {
   const mongoose = require('mongoose');
+  const { getCircuitStatus } = require('./services/mlClient');
+
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     database: 'disconnected',
     redis: 'disconnected',
-    memory: process.memoryUsage()
+    memory: process.memoryUsage(),
+    ml: getCircuitStatus()
   };
-  
+
   try {
     await mongoose.connection.db.admin().ping();
     health.database = 'connected';
@@ -95,31 +99,37 @@ app.get('/api/health', async (req, res) => {
     health.status = 'degraded';
     health.database = 'disconnected';
   }
-  
+
   try {
     await redis.ping();
     health.redis = 'connected';
   } catch (err) {
     health.redis = 'disconnected';
   }
-  
+
   const statusCode = health.status === 'ok' ? 200 : 503;
   res.status(statusCode).json(health);
 });
 
+// ===== API Version 1 (v1) =====
+const v1Router = express.Router();
+
 // Public routes (no authentication required)
-app.use('/api/auth', authRoutes);
+v1Router.use('/auth', authRoutes);
 
 // Protected routes (authentication required)
-app.use('/api/products', authenticateToken, productRoutes);
-app.use('/api/depots', authenticateToken, depotRoutes);
-app.use('/api/forecasts', authenticateToken, forecastRoutes);
-app.use('/api/transactions', authenticateToken, transactionRoutes);
-app.use('/api/dashboard', authenticateToken, dashboardRoutes);
-app.use('/api/reports', authenticateToken, reportsRoutes);
-app.use('/api/alerts', authenticateToken, alertRoutes);
-app.use('/api/admin', authenticateToken, adminRoutes);
-app.use('/api/stock-requests', authenticateToken, stockRequestRoutes);
+v1Router.use('/products', authenticateToken, productRoutes);
+v1Router.use('/depots', authenticateToken, depotRoutes);
+v1Router.use('/forecasts', authenticateToken, forecastRoutes);
+v1Router.use('/transactions', authenticateToken, transactionRoutes);
+v1Router.use('/dashboard', authenticateToken, dashboardRoutes);
+v1Router.use('/reports', authenticateToken, reportsRoutes);
+v1Router.use('/alerts', authenticateToken, alertRoutes);
+v1Router.use('/admin', authenticateToken, adminRoutes);
+v1Router.use('/stock-requests', authenticateToken, stockRequestRoutes);
+
+// Mount the v1 API routes
+app.use('/api/v1', v1Router);
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
@@ -133,8 +143,38 @@ io.on('connection', (socket) => {
 // Make io accessible to routes if needed
 app.set('io', io);
 
+// ── Pattern 2.1 Test Route ──────────────────────────
+const { AppError, asyncWrap } = require('./middleware/errorHandler');
+app.get('/api/test-error', asyncWrap(async (req, res) => {
+  throw new AppError('test error triggered manually', 400, 'TEST_ERROR');
+}));
+
+
+// 404 handler — catches any route not matched above
+app.use((req, res) => {
+  res.status(404).json({
+    error: `Route ${req.method} ${req.path} not found`,
+    code: 'NOT_FOUND',
+  });
+});
+
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+// Catch unhandled promise rejections (safety net)
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  // Give server time to finish in-flight requests
+  server.close(() => process.exit(1));
+});
+
+// Handle uncaught exceptions gracefully
+process.on('uncaughtException', err => {
+  console.error("FATAL UNCAUGHT EXCEPTION:", err);
+  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+  // In production, you might want to restart the process here
+  process.exit(1);
+});
 
 // Start server
 const PORT = config.PORT;

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Using Vite proxies defined in vite.config.js
-const NODE_API_URL = '/api';
+const NODE_API_URL = '/api/v1';
 const PYTHON_API_URL = '/ml-api';
 
 const nodeApi = axios.create({ baseURL: NODE_API_URL });

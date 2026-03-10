@@ -8,6 +8,7 @@ const Alert = require('./Alert');
 const Report = require('./Report');
 const DepotAssignment = require('./DepotAssignment');
 const StockRequest = require('./StockRequest');
+const DepotStock = require('./DepotStock');
 
 module.exports = {
   User,
@@ -18,5 +19,6 @@ module.exports = {
   Alert,
   Report,
   DepotAssignment,
-  StockRequest
+  StockRequest,
+  DepotStock
 };

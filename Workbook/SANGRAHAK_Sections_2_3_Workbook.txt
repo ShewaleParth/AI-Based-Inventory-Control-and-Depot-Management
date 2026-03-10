@@ -1,0 +1,1474 @@
+SANGRAHAK
+Step-by-Step Developer Workbook
+Section 2: Backend Architecture  ·  Section 3: Business Logic
+⚙️  Section 2
+Backend Architecture
+5 patterns · 25 steps
+Error handling, Pagination, Atomic Transfers,
+Async ML Jobs, Circuit Breaker
+🧠  Section 3
+Business Logic
+4 patterns · 20 steps
+Audit Log, Alert Engine, Soft Delete,
+Rebalancing Algorithm
+March 2026  ·  Prepared by Claude (Anthropic)
+📖  How to Use This Workbook
+Each pattern follows: Why it matters → What you build → Step-by-step how-to → Code → Checkpoint
+Each implementation pattern in this document is broken into the same five layers so you always know exactly where you are and what comes next.
+Layer
+What it contains
+🔴  WHY IT MATTERS
+The specific problem in your current codebase that this pattern fixes. Read this first — if you don't understand the problem, the solution won't stick.
+🏗️  WHAT YOU ARE BUILDING
+A plain-English description of the end result. What file you create, what it does, and how it connects to the rest of the system.
+🪜  STEP-BY-STEP
+Numbered micro-steps you follow in order. Each step is a single action — install a package, create a file, write a function, register middleware.
+💻  THE CODE
+The complete, copy-paste-ready implementation with inline comments. The file path is shown at the top of every block.
+✅  CHECKPOINT
+A short test you can run immediately to confirm the pattern is wired up correctly before moving on.
+⚠️  Before you start
+Complete Section 1 (Security) before this workbook. The protect and authorize middleware, the asyncWrap helper, and the AppError class are referenced throughout Sections 2 and 3. If those aren't in place yet, implement them first.
+⚙️  SECTION 2
+Backend Architecture  —  5 Patterns  ·  Estimated Time: 6–8 Hours
+The five patterns in this section transform your Express + Flask backend from a fragile dev prototype into a production-grade service layer. They address reliability, observability, data integrity, performance, and fault tolerance — in that order.
+#
+Pattern Name
+Pattern 2.1
+Global Error Handler + Winston Logger
+Pattern 2.2
+Universal Pagination, Filtering & Sorting
+Pattern 2.3
+Atomic Stock Transfers (MongoDB Sessions)
+Pattern 2.4
+Flask → Gunicorn + BullMQ Async Job Queue
+Pattern 2.5
+Circuit Breaker for ML Service + API Versioning
+Pattern 2.1 — Global Error Handler + Structured Logger
+🔴  Why This Matters
+Right now, any unhandled error inside an async route handler — a failed DB call, a null dereference, a network timeout — does one of two things: it either silently swallows the error and hangs the request forever, or it crashes the entire Node.js process. Either way, your users get a broken experience with no useful feedback.
+Additionally, without structured logging, debugging a production issue is nearly impossible. You have no record of what request triggered the error, which user was involved, or what the stack trace was.
+🏗️  What You Are Building
+Three things that work together:
+An AppError class — a typed, structured way to throw operational errors (e.g. 'Product not found' vs a genuine bug)
+An asyncWrap() helper — wraps every async route handler so you never need try/catch again
+A Winston logger — writes structured JSON logs to console (dev) and rotating log files (production) with userId, IP, and full stack trace on every error
+🪜  Step-by-Step Implementation
+1
+Install dependencies
+Open your terminal inside Backend/server/ and run the install command.
+Terminal
+cd Backend/server
+npm install winston winston-daily-rotate-file
+ 
+2
+Create the logger config
+This file is the single source of truth for all application logging.
+// Backend/server/config/logger.js
+const winston = require('winston');
+const DailyRotateFile = require('winston-daily-rotate-file');
+// Different formats for dev vs production
+const devFormat  = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.timestamp({ format: 'HH:mm:ss' }),
+  winston.format.printf(({ timestamp, level, message, ...meta }) =>
+    `${timestamp} [${level}] ${message} ${
+      Object.keys(meta).length ? JSON.stringify(meta) : ''
+    }`
+  )
+);
+const prodFormat = winston.format.combine(
+  winston.format.timestamp(),
+  winston.format.errors({ stack: true }),
+  winston.format.json()  // machine-readable in production
+);
+const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
+  format: process.env.NODE_ENV === 'production'
+    ? prodFormat : devFormat,
+  transports: [
+    new winston.transports.Console(),
+    // Rotating file: new log file every day, keep 14 days
+    new DailyRotateFile({
+      filename : 'logs/error-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      level    : 'error',
+      maxFiles : '14d',
+    }),
+    new DailyRotateFile({
+      filename : 'logs/combined-%DATE%.log',
+      datePattern: 'YYYY-MM-DD',
+      maxFiles : '7d',
+    }),
+  ],
+});
+module.exports = logger;
+ 
+3
+Create the error handler middleware
+This file contains AppError, asyncWrap, and the global error middleware.
+// Backend/server/middleware/errorHandler.js
+const logger = require('../config/logger');
+// ── Typed application error ──────────────────────────
+// isOperational = true  → we control this, safe to show to user
+// isOperational = false → unexpected bug, show generic message
+class AppError extends Error {
+  constructor(message, statusCode, code) {
+    super(message);
+    this.statusCode    = statusCode;
+    this.code          = code || 'APP_ERROR';
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+// ── asyncWrap ────────────────────────────────────────
+// Wraps an async handler so any thrown error is forwarded
+// to Express's next(err) automatically.
+// Before:  async (req,res) => { try { ... } catch(e) { next(e) } }
+// After:   asyncWrap(async (req,res) => { ... })
+const asyncWrap = fn => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+// ── Global error handler ─────────────────────────────
+// MUST be registered LAST in server.js (after all routes)
+// MUST have exactly 4 arguments — Express detects this
+function errorHandler(err, req, res, next) {
+  const statusCode = err.statusCode || 500;
+  const code       = err.code || 'INTERNAL_ERROR';
+  // Only expose the real message for operational errors
+  const message = err.isOperational
+    ? err.message
+    : 'An unexpected error occurred';
+  // Always log the full error with context
+  logger.error({
+    code,
+    message    : err.message,
+    stack      : err.stack,
+    statusCode,
+    method     : req.method,
+    path       : req.path,
+    userId     : req.user?.userId || 'unauthenticated',
+    ip         : req.ip || req.headers['x-forwarded-for'],
+    requestBody: req.body,
+  });
+  res.status(statusCode).json({ error: message, code });
+}
+module.exports = { AppError, asyncWrap, errorHandler };
+ 
+4
+Register the error handler in server.js
+This must be the very last app.use() call — after all your routes.
+// Backend/server/server.js  (additions only)
+const { errorHandler } = require('./middleware/errorHandler');
+const logger           = require('./config/logger');
+// ... all your existing routes above this line ...
+// 404 handler — catches any route not matched above
+app.use((req, res) => {
+  res.status(404).json({
+    error: `Route ${req.method} ${req.path} not found`,
+    code : 'NOT_FOUND',
+  });
+});
+// Global error handler — MUST be last
+app.use(errorHandler);
+// Catch unhandled promise rejections (safety net)
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  // Give server time to finish in-flight requests
+  server.close(() => process.exit(1));
+});
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+ 
+5
+Update all route handlers to use asyncWrap
+Replace try/catch blocks across your routes.
+// Before (every route needed this boilerplate):
+router.get('/products/:id', protect, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Not found' });
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
+});
+// After — asyncWrap handles ALL error forwarding:
+const { asyncWrap, AppError } = require('../middleware/errorHandler');
+router.get('/products/:id', protect, asyncWrap(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+  if (!product)
+    throw new AppError('Product not found', 404, 'PRODUCT_NOT_FOUND');
+  res.json(product);
+}));
+// Any thrown error — AppError or unexpected — is automatically
+// caught and forwarded to the global errorHandler.
+ 
+✅  Checkpoint
+Test this: intentionally throw an error in any route — throw new AppError('test', 400). You should see (1) a structured JSON error response in the browser, (2) a detailed log entry in your terminal, and (3) a log file created inside Backend/server/logs/. If all three appear, Pattern 2.1 is complete.
+Pattern 2.2 — Universal Pagination, Filtering & Sorting
+🔴  Why This Matters
+Every list endpoint in your project — GET /products, GET /transactions, GET /alerts — currently returns every single record in the database in one response. At 100 records this is fine. At 10,000 records, this will timeout. At 100,000 records, it will crash MongoDB, crash Node.js, and crash the browser simultaneously.
+Furthermore, your frontend needs to filter by depot, sort by date, and search by SKU. Without query support, every filter requires a separate endpoint, and the codebase becomes unmaintainable.
+🏗️  What You Are Building
+A single paginate() utility function that you plug into any route in one line. It reads standard query parameters from the URL and handles pagination, field filtering, text search, and sorting automatically — without any per-endpoint boilerplate.
+📐  How it works with URL query strings
+GET /api/v1/transactions?page=2&limit=25&sort=-createdAt&type=TRANSFER&depotId=abc123  →  Returns page 2 of 25 transactions, newest first, filtered to TRANSFER type at depot abc123. No extra code needed per endpoint.
+🪜  Step-by-Step Implementation
+1
+Add a text search index to your MongoDB models
+This enables the $text search operator. Run this once per model that needs search.
+// Backend/server/models/Product.js  (add to your schema)
+const ProductSchema = new mongoose.Schema({
+  // ... your existing fields ...
+});
+// Add a text index on the fields you want to search
+ProductSchema.index({
+  name    : 'text',
+  sku     : 'text',
+  category: 'text',
+}, { name: 'product_text_index' });
+// Add compound indexes for common filter combinations
+// This makes filter queries 100x faster at scale
+ProductSchema.index({ category: 1, createdAt: -1 });
+ProductSchema.index({ isDeleted: 1, category: 1 });
+// Transaction model — critical indexes
+// TransactionSchema.index({ depotId: 1, createdAt: -1 });
+// TransactionSchema.index({ productId: 1, type: 1 });
+ 
+2
+Create the queryBuilder utility file
+This is the core utility. One file, used by every list endpoint.
+// Backend/server/utils/queryBuilder.js
+/**
+ * Paginate any Mongoose model with filtering, sorting, search.
+ * @param  {Model}  Model       - Mongoose model to query
+ * @param  {Object} reqQuery    - req.query from Express
+ * @param  {string|Object} pop  - optional .populate() argument
+ * @returns {Promise<{data, pagination}>}
+ */
+async function paginate(Model, reqQuery, pop = null) {
+  // 1. Extract control params, everything else is a filter
+  const {
+    page   = 1,
+    limit  = 20,
+    sort   = '-createdAt',  // default: newest first
+    search = null,
+    fields = null,          // comma-separated field names
+    ...filters
+  } = reqQuery;
+  // 2. Convert operator syntax to MongoDB operators
+  //    URL: ?qty[gte]=10  becomes  { qty: { $gte: 10 } }
+  const queryStr = JSON.stringify(filters).replace(
+    /\b(gte|gt|lte|lt|eq|ne|in|nin)\b/g,
+    op => `$${op}`
+  );
+  const parsedFilters = JSON.parse(queryStr);
+  // 3. Build the query
+  let query = Model.find(parsedFilters);
+  // 4. Full-text search (requires text index on model)
+  if (search) {
+    query = query.find({ $text: { $search: search } });
+  }
+  // 5. Field projection (only return requested fields)
+  if (fields) {
+    query = query.select(fields.split(',').join(' '));
+  }
+  // 6. Count total BEFORE applying skip/limit
+  const total = await Model.countDocuments(parsedFilters);
+  // 7. Apply sort, pagination
+  const pageNum  = Math.max(1, parseInt(page));
+  const limitNum = Math.min(100, parseInt(limit)); // max 100 per page
+  const skip     = (pageNum - 1) * limitNum;
+  query = query.sort(sort).skip(skip).limit(limitNum);
+  // 8. Optional population (joins)
+  if (pop) query = query.populate(pop);
+  // 9. Execute with .lean() for plain JS objects (faster)
+  const data = await query.lean().exec();
+  return {
+    data,
+    pagination: {
+      total,
+      page       : pageNum,
+      limit      : limitNum,
+      pages      : Math.ceil(total / limitNum),
+      hasNext    : pageNum * limitNum < total,
+      hasPrevious: pageNum > 1,
+    },
+  };
+}
+module.exports = { paginate };
+ 
+3
+Update every list endpoint — replace find() with paginate()
+This is a find-and-replace pattern across all your route files.
+// Backend/server/routes/v1/products.js
+const { paginate }   = require('../../utils/queryBuilder');
+const { asyncWrap }  = require('../../middleware/errorHandler');
+const { protect }    = require('../../middleware/auth');
+const { authorize }  = require('../../middleware/rbac');
+// GET /api/v1/products
+// Supports: ?page=1&limit=20&sort=-createdAt
+//           &category=Electronics&search=laptop
+//           &minStock[lte]=5  (filter: minStock <= 5)
+router.get('/', protect, authorize('products:read'),
+  asyncWrap(async (req, res) => {
+    const result = await paginate(
+      Product,
+      req.query,
+      { path: 'category', select: 'name' } // optional join
+    );
+    res.json(result);
+  })
+);
+// GET /api/v1/transactions
+router.get('/transactions', protect,
+  asyncWrap(async (req, res) => {
+    const result = await paginate(
+      Transaction,
+      req.query,
+      ['product', 'fromDepot', 'toDepot']
+    );
+    res.json(result);
+  })
+);
+// Response shape the frontend receives:
+// {
+//   data: [ ...records ],
+//   pagination: {
+//     total: 4821,
+//     page: 2,  limit: 25,  pages: 193,
+//     hasNext: true,  hasPrevious: true
+//   }
+// }
+ 
+✅  Checkpoint
+Open Postman or your browser and hit: GET /api/v1/products?page=1&limit=5&sort=-createdAt. You should receive exactly 5 products and a pagination object showing total count, pages, and hasNext. If you see all products without the pagination wrapper, the route is not using paginate() yet.
+Pattern 2.3 — Atomic Stock Transfers (MongoDB Sessions)
+🔴  Why This Matters
+When a user initiates a transfer of 100 units from Depot A to Depot B, your current code performs two separate write operations: first it deducts 100 from Depot A, then it adds 100 to Depot B. These are independent database calls with no link between them.
+If anything — a server crash, a network timeout, a process kill — happens between those two writes, you permanently lose 100 units from Depot A with nothing credited to Depot B. This is called phantom inventory and it is unrecoverable without a manual database audit. In a real logistics operation, this is a critical data integrity failure.
+🏗️  What You Are Building
+A transferService.js file that wraps the entire transfer operation — deduct from source, credit destination, create audit record — inside a single MongoDB ACID transaction. Either all three writes succeed, or all three are rolled back. There is no in-between state.
+📌  Prerequisite
+MongoDB transactions require a replica set. On MongoDB Atlas (which your README uses), every cluster — including the free M0 tier — runs as a replica set by default. You do not need to configure anything extra. If you are running MongoDB locally for development, you need to start it with --replSet rs0 and run rs.initiate() once.
+🪜  Step-by-Step Implementation
+1
+Check your DepotStock model structure
+Confirm the model has productId, depotId, and quantity fields. You will add an index.
+// Backend/server/models/DepotStock.js — add these indexes
+const DepotStockSchema = new mongoose.Schema({
+  productId : { type: mongoose.Schema.Types.ObjectId,
+                ref: 'Product', required: true },
+  depotId   : { type: mongoose.Schema.Types.ObjectId,
+                ref: 'Depot', required: true },
+  quantity  : { type: Number, default: 0, min: 0 },
+  // min: 0 prevents negative stock at the schema level
+}, { timestamps: true });
+// Compound unique index: one record per product per depot
+DepotStockSchema.index(
+  { productId: 1, depotId: 1 },
+  { unique: true }
+);
+ 
+2
+Create the transferService.js file
+This is the core of Pattern 2.3.
+// Backend/server/services/transferService.js
+const mongoose    = require('mongoose');
+const DepotStock  = require('../models/DepotStock');
+const Transaction = require('../models/Transaction');
+const { AppError }= require('../middleware/errorHandler');
+const logger      = require('../config/logger');
+/**
+ * Execute an inter-depot stock transfer atomically.
+ * All writes succeed or all are rolled back — no partial state.
+ */
+async function executeTransfer({
+  productId, fromDepotId, toDepotId, quantity, userId, notes
+}) {
+  // Validate inputs before touching the database
+  if (!productId || !fromDepotId || !toDepotId)
+    throw new AppError('Missing required transfer fields',
+      400, 'INVALID_INPUT');
+  if (quantity <= 0)
+    throw new AppError('Transfer quantity must be positive',
+      400, 'INVALID_QUANTITY');
+  if (fromDepotId.toString() === toDepotId.toString())
+    throw new AppError('Source and destination must differ',
+      400, 'SAME_DEPOT');
+  // Start MongoDB session
+  const session = await mongoose.startSession();
+  session.startTransaction({
+    // Strictest isolation — reads see only committed data
+    readConcern : { level: 'snapshot' },
+    writeConcern: { w: 'majority' },
+  });
+  try {
+    // ── STEP 1: Read source stock inside the transaction ──
+    // The session: option locks this document for the transaction
+    const sourceStock = await DepotStock.findOne(
+      { productId, depotId: fromDepotId },
+      null,
+      { session }  // <-- critical: read inside transaction
+    );
+    if (!sourceStock || sourceStock.quantity < quantity) {
+      throw new AppError(
+        `Insufficient stock. Available: ${sourceStock?.quantity ?? 0}, Requested: ${quantity}`,
+        400,
+        'INSUFFICIENT_STOCK'
+      );
+    }
+    // ── STEP 2: Deduct from source ────────────────────────
+    const updatedSource = await DepotStock.findOneAndUpdate(
+      { productId, depotId: fromDepotId },
+      { $inc: { quantity: -quantity } },
+      { session, new: true, runValidators: true }
+      // runValidators enforces min: 0 from schema
+    );
+    // ── STEP 3: Credit destination ────────────────────────
+    // upsert: true creates the record if it doesn't exist yet
+    await DepotStock.findOneAndUpdate(
+      { productId, depotId: toDepotId },
+      { $inc: { quantity: quantity } },
+      { session, new: true, upsert: true, runValidators: true }
+    );
+    // ── STEP 4: Audit record (same transaction) ───────────
+    // Using array syntax is required for create() in a session
+    const [txn] = await Transaction.create([{
+      type       : 'TRANSFER',
+      productId,
+      fromDepotId,
+      toDepotId,
+      quantity,
+      performedBy: userId,
+      notes      : notes || '',
+      timestamp  : new Date(),
+    }], { session });
+    // ── All good: commit all three writes atomically ──────
+    await session.commitTransaction();
+    logger.info(`Transfer committed: ${quantity} units of ${productId}`);
+    return {
+      success    : true,
+      transactionId: txn._id,
+      newSourceQty : updatedSource.quantity,
+    };
+  } catch (err) {
+    // Any error — rolls back ALL writes (deduct AND credit)
+    await session.abortTransaction();
+    logger.error(`Transfer aborted: ${err.message}`);
+    throw err; // re-throw so asyncWrap sends proper response
+  } finally {
+    // Always release the session, even if commit/abort fails
+    session.endSession();
+  }
+}
+module.exports = { executeTransfer };
+ 
+3
+Wire the service into your transfers route
+Replace the direct DB calls in your route handler with the service.
+// Backend/server/routes/v1/transfers.js
+const { executeTransfer } = require('../../services/transferService');
+const { asyncWrap }       = require('../../middleware/errorHandler');
+const { protect }         = require('../../middleware/auth');
+const { authorize }       = require('../../middleware/rbac');
+// POST /api/v1/transfers
+router.post('/', protect, authorize('transfers:create'),
+  asyncWrap(async (req, res) => {
+    const { productId, fromDepotId, toDepotId,
+            quantity, notes } = req.body;
+    const result = await executeTransfer({
+      productId, fromDepotId, toDepotId,
+      quantity : parseInt(quantity),
+      userId   : req.user.userId,
+      notes,
+    });
+    res.status(201).json({
+      message: 'Transfer completed successfully',
+      ...result,
+    });
+  })
+);
+ 
+✅  Checkpoint
+Simulate a failure: in transferService.js, add throw new Error('forced crash') between Step 2 (deduct) and Step 3 (credit). Run a transfer. Check both depots in MongoDB — neither quantity should have changed. If Depot A was deducted but Depot B was not credited, the session is not working. Remove the forced error when done.
+Pattern 2.4 — Gunicorn + BullMQ Async ML Jobs
+🔴  Why This Matters
+Your Flask ML service runs in development mode (app.run()), which means it handles one request at a time in a single thread. ARIMA model inference takes 3–10 seconds depending on data size. Every user who requests a forecast makes every other user wait. With 5 concurrent users, the 5th user waits 40+ seconds. This is completely unacceptable in production.
+The solution has two parts: Gunicorn runs Flask with multiple worker processes simultaneously. BullMQ queues forecast jobs so Node.js never blocks waiting for Python — it submits the job, returns a jobId immediately, and the client polls for the result.
+🪜  Step-by-Step Implementation
+1
+Install Gunicorn in your Python environment
+One command.
+Terminal
+pip install gunicorn --break-system-packages
+# Add to requirements.txt:
+# gunicorn==21.2.0
+ 
+2
+Create a wsgi.py entry point for Flask
+This replaces running app.py directly.
+# Backend/code/wsgi.py
+# This file is the production entry point.
+# Development: python app.py
+# Production:  gunicorn -w 4 -b 0.0.0.0:5001 wsgi:app
+from app import create_app
+app = create_app()
+# gunicorn reads the 'app' variable from this module
+# -w 4  means 4 worker processes (handles 4 requests simultaneously)
+# -b    binds to host:port
+if __name__ == '__main__':
+    # Only for local development fallback
+    app.run(host='0.0.0.0', port=5001, debug=False)
+ 
+📌  If your app.py doesn't have create_app()
+Refactor it: wrap your Flask setup in a factory function. def create_app(): app = Flask(__name__); [register routes]; return app. This is the Flask Application Factory pattern and it makes testing and Gunicorn much easier.
+3
+Install BullMQ and ioredis in Node.js
+BullMQ is the job queue; ioredis is its Redis client.
+Terminal
+cd Backend/server
+npm install bullmq ioredis
+ 
+4
+Create the Redis client config
+Shared across BullMQ, rate limiting, and JWT blacklisting.
+// Backend/server/config/redis.js
+const { Redis } = require('ioredis');
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+  maxRetriesPerRequest: null, // required by BullMQ
+  enableReadyCheck     : false,
+  lazyConnect          : true,
+});
+redis.on('connect', () =>
+  require('./logger').info('Redis connected'));
+redis.on('error',   err =>
+  require('./logger').error('Redis error:', err.message));
+module.exports = redis;
+ 
+5
+Create the forecastService.js with queue and worker
+This is the main BullMQ implementation.
+// Backend/server/services/forecastService.js
+const { Queue, Worker, QueueEvents } = require('bullmq');
+const axios  = require('axios');
+const redis  = require('../config/redis');
+const logger = require('../config/logger');
+const ML_BASE = `http://localhost:${process.env.PYTHON_PORT}`;
+// ── Queue: accepts new forecast jobs ─────────────────
+const forecastQueue = new Queue('forecast', {
+  connection: redis,
+  defaultJobOptions: {
+    attempts          : 3,    // retry failed jobs 3 times
+    backoff           : { type: 'exponential', delay: 2000 },
+    removeOnComplete  : 100,  // keep last 100 completed jobs
+    removeOnFail      : 200,  // keep last 200 failed jobs
+  },
+});
+// ── Worker: processes jobs from the queue ─────────────
+// This runs in the same Node.js process as your server.
+// In high-traffic production, run this as a separate process.
+const forecastWorker = new Worker('forecast', async job => {
+  const { productId, days, depotId } = job.data;
+  logger.info(`Processing forecast: ${productId}, ${days} days`);
+  // Update job progress so the frontend can poll it
+  await job.updateProgress(10);
+  const response = await axios.post(
+    `${ML_BASE}/api/ml/predict/custom`,
+    { productId, days, depotId },
+    { timeout: 60000 }  // 60s timeout for ARIMA
+  );
+  await job.updateProgress(80);
+  const result = response.data;
+  // Cache the result in Redis (1 hour TTL)
+  await redis.set(
+    `forecast:${productId}:${depotId || 'all'}`,
+    JSON.stringify(result),
+    'EX', 3600
+  );
+  await job.updateProgress(100);
+  return result;  // stored as job returnvalue
+}, {
+  connection: redis,
+  concurrency: 3,  // process up to 3 forecasts at once
+});
+forecastWorker.on('completed', (job) =>
+  logger.info(`Forecast complete: job ${job.id}`));
+forecastWorker.on('failed', (job, err) =>
+  logger.error(`Forecast failed: job ${job?.id} — ${err.message}`));
+// ── Public API ────────────────────────────────────────
+async function enqueueForecast(productId, days=30, depotId=null) {
+  // Check cache first — skip ML if we have a recent result
+  const cacheKey = `forecast:${productId}:${depotId || 'all'}`;
+  const cached   = await redis.get(cacheKey);
+  if (cached) {
+    return { jobId: null, cached: true,
+             data: JSON.parse(cached) };
+  }
+  // Queue a new job and return the jobId immediately
+  const job = await forecastQueue.add('predict',
+    { productId, days, depotId });
+  return { jobId: job.id, cached: false };
+}
+async function getJobStatus(jobId) {
+  const job   = await forecastQueue.getJob(jobId);
+  if (!job) return { status: 'not_found' };
+  const state = await job.getState(); // waiting/active/completed/failed
+  return {
+    status  : state,
+    progress: job.progress,
+    result  : state === 'completed' ? job.returnvalue : null,
+    error   : state === 'failed'    ? job.failedReason : null,
+  };
+}
+module.exports = { enqueueForecast, getJobStatus };
+ 
+6
+Create the forecast route endpoints
+Non-blocking request → poll pattern.
+// Backend/server/routes/v1/forecast.js
+const { enqueueForecast, getJobStatus }
+  = require('../../services/forecastService');
+const { asyncWrap } = require('../../middleware/errorHandler');
+const { protect }   = require('../../middleware/auth');
+// POST /api/v1/forecast/enqueue
+// Returns immediately with a jobId (or cached data)
+router.post('/enqueue', protect, asyncWrap(async (req, res) => {
+  const { productId, days=30, depotId } = req.body;
+  const result = await enqueueForecast(productId, days, depotId);
+  if (result.cached) {
+    return res.json({ source: 'cache', data: result.data });
+  }
+  res.status(202).json({ jobId: result.jobId, status: 'queued' });
+}));
+// GET /api/v1/forecast/status/:jobId
+// Frontend polls this every 2 seconds until status = completed
+router.get('/status/:jobId', protect, asyncWrap(async (req, res) => {
+  const status = await getJobStatus(req.params.jobId);
+  res.json(status);
+}));
+ 
+✅  Checkpoint
+Start Redis locally (redis-server), then start your Node server. POST a forecast request — you should get back a 202 with a jobId in under 100ms. Then GET /forecast/status/:jobId every second — you should see it transition from 'waiting' → 'active' → 'completed' with the forecast data in result.
+Pattern 2.5 — Circuit Breaker + API Versioning
+🔴  Why This Matters
+Your Node.js server calls the Flask ML service over HTTP. If Flask crashes, goes unresponsive, or takes longer than expected, every single request that reaches the forecast endpoint in Node.js will hang until it times out — potentially tying up dozens of server connections simultaneously. This is called a cascading failure.
+A circuit breaker stops this domino effect: after a threshold of failures, it 'opens the circuit' and immediately returns cached data instead of hammering a broken service. After a cooldown period, it tries again. Users see stale but useful data instead of errors.
+🪜  Step-by-Step Implementation
+1
+Create the mlClient.js with circuit breaker logic
+This wraps all HTTP calls to Flask.
+// Backend/server/services/mlClient.js
+const axios  = require('axios');
+const redis  = require('../config/redis');
+const logger = require('../config/logger');
+// Circuit breaker state (in-memory — resets on restart)
+// For multi-instance production use, store state in Redis
+let failureCount  = 0;
+let circuitOpen   = false;
+let nextAttemptAt = null;
+const THRESHOLD   = 5;     // open after 5 consecutive failures
+const COOLDOWN_MS = 60000; // try again after 60 seconds
+const ML_BASE = `http://localhost:${process.env.PYTHON_PORT}`;
+async function callML(endpoint, data, cacheKey=null) {
+  // ── Check if circuit is open ──────────────────────
+  if (circuitOpen) {
+    const now = Date.now();
+    if (now < nextAttemptAt) {
+      // Circuit still open — return cache or fallback
+      logger.warn(`ML circuit open. Attempt in
+        ${Math.round((nextAttemptAt - now)/1000)}s`);
+      if (cacheKey) {
+        const cached = await redis.get(cacheKey);
+        if (cached) return {
+          ...JSON.parse(cached), fromCache: true };
+      }
+      return { error: 'ML service temporarily unavailable',
+               fallback: true };
+    }
+    // Cooldown elapsed — reset to half-open state
+    circuitOpen  = false;
+    failureCount = 0;
+    logger.info('ML circuit half-open — testing...');
+  }
+  // ── Attempt the ML call ───────────────────────────
+  try {
+    const response = await axios.post(
+      `${ML_BASE}${endpoint}`,
+      data,
+      { timeout: 15000 }  // 15s hard timeout
+    );
+    // Success — reset failure count
+    failureCount = 0;
+    logger.debug(`ML call success: ${endpoint}`);
+    return response.data;
+  } catch (err) {
+    failureCount++;
+    logger.error(`ML failure ${failureCount}/${THRESHOLD}:
+      ${err.message}`);
+    // Trip the circuit after threshold failures
+    if (failureCount >= THRESHOLD) {
+      circuitOpen   = true;
+      nextAttemptAt = Date.now() + COOLDOWN_MS;
+      logger.warn('ML circuit OPENED — using cache fallback');
+    }
+    // Try to serve stale cached data
+    if (cacheKey) {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        logger.info('Serving stale cache for ML result');
+        return { ...JSON.parse(cached), fromCache: true };
+      }
+    }
+    // No cache available — surface the error
+    throw err;
+  }
+}
+// Status endpoint for health monitoring
+function getCircuitStatus() {
+  return {
+    open        : circuitOpen,
+    failures    : failureCount,
+    nextAttempt : nextAttemptAt
+      ? new Date(nextAttemptAt).toISOString() : null,
+  };
+}
+module.exports = { callML, getCircuitStatus };
+ 
+2
+Add API versioning to server.js
+All routes under /api/v1 — add once, maintain forever.
+// Backend/server/server.js — route registration
+// All v1 routes live under /api/v1
+// This means future breaking changes go to /api/v2
+// and existing clients on /api/v1 are never broken
+const v1Router = require('express').Router();
+v1Router.use('/auth',         require('./routes/v1/auth'));
+v1Router.use('/products',     require('./routes/v1/products'));
+v1Router.use('/depots',       require('./routes/v1/depots'));
+v1Router.use('/transactions', require('./routes/v1/transactions'));
+v1Router.use('/transfers',    require('./routes/v1/transfers'));
+v1Router.use('/forecast',     require('./routes/v1/forecast'));
+v1Router.use('/suppliers',    require('./routes/v1/suppliers'));
+v1Router.use('/alerts',       require('./routes/v1/alerts'));
+v1Router.use('/reports',      require('./routes/v1/reports'));
+app.use('/api/v1', v1Router);
+// Health check — not versioned
+app.get('/health', (req, res) => {
+  const { getCircuitStatus } = require('./services/mlClient');
+  res.json({
+    status   : 'ok',
+    timestamp: new Date().toISOString(),
+    ml       : getCircuitStatus(),
+  });
+});
+ 
+✅  Checkpoint
+Stop your Flask server. Make 5+ forecast requests via Postman. After 5 failures, the 6th request should return immediately with fromCache: true or a fallback message — it should NOT hang or timeout. Restart Flask and wait 60 seconds — the circuit should close and ML calls should succeed again.
+⚙️  Section 2 Complete
+Your backend now has: structured error handling · paginated endpoints · atomic transfers · async ML jobs · circuit breaker · versioned API
+🧠  SECTION 3
+Business Logic  —  4 Patterns  ·  Estimated Time: 5–7 Hours
+The four patterns in this section implement the enterprise-grade business rules that separate a toy project from a system that a logistics company would actually trust. They address accountability, intelligence, data safety, and operational optimisation.
+#
+Pattern Name
+Pattern 3.1
+Immutable Audit Log — Every Action Recorded
+Pattern 3.2
+Intelligent Alert Engine — Smart Reorder Logic
+Pattern 3.3
+Soft Delete Plugin — Safe Data Lifecycle
+Pattern 3.4
+Multi-Depot Rebalancing Algorithm
+Pattern 3.1 — Immutable Audit Log System
+🔴  Why This Matters
+Today, if a product's minimum stock level is changed from 50 to 5 units and 3 weeks later the depot runs out, there is no way to answer: who changed it, when, what it was before, or why. If a warehouse manager deletes a product that is still in stock at two depots, that information is gone permanently.
+Enterprise logistics systems are subject to regulatory compliance requirements and internal audit requirements. A complete, tamper-proof action log is not a nice-to-have — it is mandatory. It is also your best debugging tool when something goes wrong in production.
+🏗️  What You Are Building
+An AuditLog MongoDB model (write-once, never updated) and an auditService.js file with a single log() function. You then call audit.log() inside every controller that creates, updates, or deletes data — passing the before and after snapshots. The audit log is indexed for fast lookup by user, entity, and date.
+🪜  Step-by-Step Implementation
+1
+Create the AuditLog model
+The key design: no update methods. This collection is append-only.
+// Backend/server/models/AuditLog.js
+const mongoose = require('mongoose');
+const AuditLogSchema = new mongoose.Schema({
+  // What happened
+  action      : {
+    type    : String,
+    required: true,
+    enum    : ['CREATE','UPDATE','DELETE','LOGIN',
+              'LOGOUT','TRANSFER','EXPORT','RESTORE'],
+  },
+  // What was affected
+  entity      : { type: String, required: true }, // 'Product'
+  entityId    : { type: mongoose.Schema.Types.ObjectId },
+  entityLabel : { type: String },  // human-readable, e.g. SKU
+  // Who did it
+  performedBy : {
+    type    : mongoose.Schema.Types.ObjectId,
+    ref     : 'User',
+    required: true,
+  },
+  performedByName: { type: String }, // denormalised for speed
+  role           : { type: String },
+  // Where from
+  ipAddress  : { type: String },
+  userAgent  : { type: String },
+  // What changed — full before/after snapshots
+  before     : { type: mongoose.Schema.Types.Mixed },
+  after      : { type: mongoose.Schema.Types.Mixed },
+  // Extra context
+  meta       : { type: mongoose.Schema.Types.Mixed },
+}, {
+  timestamps: true,
+  versionKey: false,
+  // Make this collection read-optimised
+  capped: false, // do NOT cap — you want to keep all history
+});
+// Fast lookup indexes — these three cover 95% of queries
+AuditLogSchema.index({ performedBy: 1, createdAt: -1 });
+AuditLogSchema.index({ entity: 1, entityId: 1, createdAt: -1 });
+AuditLogSchema.index({ action: 1, createdAt: -1 });
+// IMPORTANT: Remove all update/delete methods
+// Audit logs must never be modified
+AuditLogSchema.statics.findByDateRange = function(from, to) {
+  return this.find({
+    createdAt: { $gte: from, $lte: to }
+  }).sort({ createdAt: -1 }).lean();
+};
+module.exports = mongoose.model('AuditLog', AuditLogSchema);
+ 
+2
+Create the auditService.js
+The log() function is designed to NEVER break the main operation.
+// Backend/server/services/auditService.js
+const AuditLog = require('../models/AuditLog');
+const logger   = require('../config/logger');
+/**
+ * Record an action in the audit log.
+ * This function swallows its own errors — an audit log
+ * failure must NEVER block or roll back the main operation.
+ *
+ * @param {object} options
+ * @param {string}   options.action   - CREATE|UPDATE|DELETE etc.
+ * @param {string}   options.entity   - 'Product'|'Depot' etc.
+ * @param {ObjectId} options.entityId
+ * @param {string}   options.entityLabel - e.g. product SKU
+ * @param {Request}  options.req      - Express request object
+ * @param {object}   options.before   - state before the change
+ * @param {object}   options.after    - state after the change
+ * @param {object}   options.meta     - any extra context
+ */
+async function log({
+  action, entity, entityId, entityLabel,
+  req, before, after, meta
+}) {
+  try {
+    await AuditLog.create({
+      action,
+      entity,
+      entityId,
+      entityLabel,
+      performedBy    : req.user.userId,
+      performedByName: req.user.name || req.user.email,
+      role           : req.user.role,
+      ipAddress      : req.ip ||
+        req.headers['x-forwarded-for'],
+      userAgent      : req.headers['user-agent'],
+      before,
+      after,
+      meta,
+    });
+  } catch (auditErr) {
+    // Log the audit failure but do NOT re-throw
+    // The main operation already succeeded
+    logger.error('Audit log write failed (non-fatal):',
+      auditErr.message);
+  }
+}
+module.exports = { log };
+ 
+3
+Add audit.log() calls to every controller
+This is a pattern you apply to every write operation.
+// Backend/server/routes/v1/products.js
+const audit     = require('../../services/auditService');
+const { asyncWrap, AppError }
+  = require('../../middleware/errorHandler');
+// ── CREATE product ────────────────────────────────────
+router.post('/', protect, authorize('products:write'),
+  validate(ProductSchema),
+  asyncWrap(async (req, res) => {
+    const product = await Product.create(req.body);
+    // Log AFTER successful create
+    await audit.log({
+      action     : 'CREATE',
+      entity     : 'Product',
+      entityId   : product._id,
+      entityLabel: product.sku,
+      req,
+      before     : null,  // nothing existed before
+      after      : product.toObject(),
+    });
+    res.status(201).json(product);
+  })
+);
+// ── UPDATE product ────────────────────────────────────
+router.put('/:id', protect, authorize('products:write'),
+  asyncWrap(async (req, res) => {
+    // Capture BEFORE snapshot
+    const before = await Product.findById(req.params.id).lean();
+    if (!before)
+      throw new AppError('Product not found', 404);
+    const updated = await Product.findByIdAndUpdate(
+      req.params.id, req.body, { new: true, runValidators: true }
+    );
+    // Log with both snapshots
+    await audit.log({
+      action     : 'UPDATE',
+      entity     : 'Product',
+      entityId   : updated._id,
+      entityLabel: updated.sku,
+      req,
+      before,          // what it looked like before
+      after      : updated.toObject(),  // what it looks like now
+      meta: {
+        changedFields: Object.keys(req.body),
+      },
+    });
+    res.json(updated);
+  })
+);
+ 
+4
+Create the audit log query endpoint
+So managers can view the audit trail in the dashboard.
+// Backend/server/routes/v1/audit.js
+router.get('/', protect, authorize('users:manage'),
+  asyncWrap(async (req, res) => {
+    const { paginate } = require('../../utils/queryBuilder');
+    const result = await paginate(
+      AuditLog,
+      { ...req.query, sort: '-createdAt' },
+      { path: 'performedBy', select: 'name email' }
+    );
+    res.json(result);
+  })
+);
+// GET /api/v1/audit?entity=Product&entityId=abc
+// GET /api/v1/audit?performedBy=userId123
+// GET /api/v1/audit?action=DELETE&page=1&limit=50
+ 
+✅  Checkpoint
+Update a product via the API. Then query GET /api/v1/audit?entity=Product&entityId=<that_id>. You should see one audit entry with action: UPDATE, the before snapshot, and the after snapshot showing the changed values.
+Pattern 3.2 — Intelligent Alert Engine
+🔴  Why This Matters
+Your current alert system compares current stock to a fixed minimum threshold. This is the most basic possible implementation and it fails in two critical ways. First, it does not account for how fast stock is being consumed — a product at 50 units that is being used at 200 units/day needs an urgent alert, while a product at 50 units used at 1 unit/day is perfectly fine. Second, it does not account for supplier lead time — if your supplier takes 14 days to deliver, you need to reorder when you have 14 days of stock left, not when you hit zero.
+The result is alert spam (irrelevant warnings), missed critical alerts, and no guidance on how much to actually reorder.
+🏗️  What You Are Building
+A scheduled service (runs hourly via node-cron) that calculates the days-of-stock-remaining for every product at every depot based on actual 30-day consumption rate, compares that to the supplier's lead time, and creates one precisely-worded alert with a calculated reorder quantity. Duplicate alerts within 24 hours are suppressed.
+🪜  Step-by-Step Implementation
+1
+Install node-cron
+For scheduling the engine to run hourly.
+Terminal
+cd Backend/server
+npm install node-cron
+ 
+2
+Add supplierLeadTimeDays to your Product model
+The engine needs this per-product field.
+// Backend/server/models/Product.js — add these fields
+supplierLeadTimeDays: {
+  type   : Number,
+  default: 7,   // default: assume 1 week lead time
+  min    : 1,
+  max    : 365,
+},
+maxStockLevel: {
+  type   : Number,
+  required: true,
+},
+minStockLevel: {
+  type   : Number,
+  required: true,
+},
+// supplier reference (optional but useful)
+supplierId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref : 'Supplier',
+},
+ 
+3
+Create the alertEngine.js service
+This is the core of the alert intelligence.
+// Backend/server/services/alertEngine.js
+const DepotStock  = require('../models/DepotStock');
+const Transaction = require('../models/Transaction');
+const Alert       = require('../models/Alert');
+const logger      = require('../config/logger');
+async function runAlertEngine() {
+  logger.info('Alert engine starting...');
+  const startTime = Date.now();
+  let created = 0, skipped = 0;
+  // Load all depot stocks with product details
+  const stocks = await DepotStock.find({})
+    .populate({ path: 'productId', select:
+      'name sku minStockLevel maxStockLevel
+       supplierLeadTimeDays supplierId' })
+    .populate({ path: 'depotId', select: 'name' })
+    .lean();
+  for (const stock of stocks) {
+    const product = stock.productId;
+    const depot   = stock.depotId;
+    if (!product || !depot) continue;
+    // ─── Step A: Calculate average daily consumption ──
+    const thirtyDaysAgo = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const outboundTxns = await Transaction.find({
+      productId: product._id,
+      depotId  : depot._id,
+      type     : { $in: ['STOCK_OUT', 'TRANSFER'] },
+      createdAt: { $gte: thirtyDaysAgo },
+    }).lean();
+    const totalConsumed = outboundTxns.reduce(
+      (sum, t) => sum + t.quantity, 0);
+    const avgDailyUsage = totalConsumed / 30;
+    // ─── Step B: Days of stock remaining ─────────────
+    const daysRemaining = avgDailyUsage > 0
+      ? Math.floor(stock.quantity / avgDailyUsage)
+      : Infinity; // no consumption = no urgency
+    const leadTime = product.supplierLeadTimeDays || 7;
+    // ─── Step C: Classify alert type ──────────────────
+    let alertType = null;
+    let severity  = null;
+    if (stock.quantity === 0) {
+      alertType = 'STOCK_OUT';
+      severity  = 'critical';
+    } else if (daysRemaining !== Infinity
+               && daysRemaining <= leadTime) {
+      alertType = 'REORDER_URGENT';
+      severity  = 'high';
+    } else if (stock.quantity <= product.minStockLevel) {
+      alertType = 'LOW_STOCK';
+      severity  = 'medium';
+    } else if (stock.quantity >= product.maxStockLevel * 0.95) {
+      alertType = 'OVERSTOCK';
+      severity  = 'low';
+    }
+    if (!alertType) { skipped++; continue; }
+    // ─── Step D: Dedup — skip if same alert in 24h ────
+    const yesterday = new Date(Date.now() - 24*60*60*1000);
+    const duplicate = await Alert.findOne({
+      productId: product._id,
+      depotId  : depot._id,
+      type     : alertType,
+      resolved : false,
+      createdAt: { $gte: yesterday },
+    });
+    if (duplicate) { skipped++; continue; }
+    // ─── Step E: Calculate reorder quantity ───────────
+    // Target: fill to max stock, plus a safety buffer
+    // covering the lead time consumption
+    const safetyBuffer = avgDailyUsage > 0
+      ? Math.ceil(avgDailyUsage * leadTime * 1.2)
+      : 0;
+    const reorderQty = Math.max(0, Math.ceil(
+      (product.maxStockLevel - stock.quantity) + safetyBuffer
+    ));
+    // ─── Step F: Create the alert ─────────────────────
+    const daysLabel = daysRemaining === Infinity
+      ? 'unknown' : `${daysRemaining} days`;
+    await Alert.create({
+      type       : alertType,
+      severity,
+      productId  : product._id,
+      depotId    : depot._id,
+      resolved   : false,
+      title      : `${alertType.replace(/_/g,' ')}:
+                    ${product.name} @ ${depot.name}`,
+      message    : `Current stock: ${stock.quantity} units
+        (~${daysLabel} of supply). ` +
+        `Suggested reorder: ${reorderQty} units.`,
+      meta: {
+        currentStock: stock.quantity,
+        daysRemaining,
+        avgDailyUsage: Math.round(avgDailyUsage * 10) / 10,
+        leadTimeDays : leadTime,
+        reorderQty,
+      },
+    });
+    created++;
+  }
+  const elapsed = Date.now() - startTime;
+  logger.info(`Alert engine done: ${created} created,
+    ${skipped} skipped, ${elapsed}ms`);
+}
+module.exports = { runAlertEngine };
+ 
+4
+Schedule the engine and add a manual trigger endpoint
+Hourly via cron + on-demand via API.
+// Backend/server/server.js — add near the bottom
+const cron = require('node-cron');
+const { runAlertEngine }
+  = require('./services/alertEngine');
+// Run at the top of every hour
+cron.schedule('0 * * * *', () => {
+  runAlertEngine().catch(err =>
+    logger.error('Alert engine cron error:', err));
+});
+// Also run once at server startup
+runAlertEngine().catch(console.error);
+// Backend/server/routes/v1/alerts.js
+// Manual trigger endpoint (ADMIN only)
+router.post('/trigger-engine',
+  protect, authorize('users:manage'),
+  asyncWrap(async (req, res) => {
+    // Fire and forget — don't await
+    runAlertEngine().catch(err =>
+      logger.error('Manual engine trigger failed:', err));
+    res.json({ message: 'Alert engine triggered' });
+  })
+);
+ 
+✅  Checkpoint
+Set a product's quantity to 0 in MongoDB directly. Wait for the engine to run (or call POST /api/v1/alerts/trigger-engine). Query GET /api/v1/alerts — you should see a STOCK_OUT alert for that product with severity: critical and a reorderQty in the meta field.
+Pattern 3.3 — Soft Delete Plugin (All Models)
+🔴  Why This Matters
+Every time a record is hard-deleted from your database, several things break: the audit log references a record that no longer exists, historical transaction data loses its product reference, and recovery is impossible without a database backup. In a real inventory system, nobody should be able to permanently erase data — they should be able to deactivate it, and it should be recoverable.
+🏗️  What You Are Building
+A Mongoose plugin (a reusable schema extension) that you attach to any model with one line. It automatically adds isDeleted, deletedAt, and deletedBy fields, overrides all find queries to exclude deleted records, and adds softDelete() and restore() methods to every document.
+🪜  Step-by-Step Implementation
+1
+Create the plugin file
+One file, used by every model.
+// Backend/server/models/plugins/softDelete.js
+function softDeletePlugin(schema, options={}) {
+  // ── Add fields to the schema ──────────────────────
+  schema.add({
+    isDeleted: {
+      type   : Boolean,
+      default: false,
+      index  : true,  // fast filtering of active records
+    },
+    deletedAt: { type: Date,   default: null },
+    deletedBy: {
+      type   : require('mongoose').Schema.Types.ObjectId,
+      ref    : 'User',
+      default: null,
+    },
+  });
+  // ── Override find queries automatically ───────────
+  // Every .find(), .findOne(), .findById() call will
+  // automatically add { isDeleted: { $ne: true } }
+  // UNLESS you explicitly pass { includeDeleted: true }
+  const findMethods = [
+    'find', 'findOne', 'findOneAndUpdate',
+    'findOneAndDelete', 'countDocuments', 'count'
+  ];
+  findMethods.forEach(method => {
+    schema.pre(method, function() {
+      if (this._conditions.includeDeleted === true) {
+        delete this._conditions.includeDeleted;
+        // Include all records (for admin/audit views)
+      } else {
+        this.where({ isDeleted: { $ne: true } });
+      }
+    });
+  });
+  // ── Instance method: doc.softDelete(userId) ───────
+  schema.methods.softDelete = async function(userId) {
+    this.isDeleted = true;
+    this.deletedAt = new Date();
+    this.deletedBy = userId;
+    return this.save();
+  };
+  // ── Static: Model.restore(id) ──────────────────────
+  schema.statics.restore = async function(id) {
+    return this.findOneAndUpdate(
+      { _id: id, includeDeleted: true },
+      { $set: {
+          isDeleted: false,
+          deletedAt: null,
+          deletedBy: null,
+        }
+      },
+      { new: true }
+    );
+  };
+  // ── Static: Model.findDeleted() ────────────────────
+  schema.statics.findDeleted = async function(filter={}) {
+    return this.find({ ...filter, includeDeleted: true,
+      isDeleted: true }).lean();
+  };
+}
+module.exports = softDeletePlugin;
+ 
+2
+Attach the plugin to every model
+One line per model file.
+// Backend/server/models/Product.js
+const softDelete = require('./plugins/softDelete');
+// ... your schema definition ...
+ProductSchema.plugin(softDelete);
+module.exports = mongoose.model('Product', ProductSchema);
+// Do the same for:
+// DepotSchema.plugin(softDelete);
+// SupplierSchema.plugin(softDelete);
+// AlertSchema.plugin(softDelete);
+// UserSchema.plugin(softDelete);
+ 
+3
+Update DELETE controllers to use softDelete
+Replace every findByIdAndDelete() call.
+// Backend/server/routes/v1/products.js
+// DELETE /api/v1/products/:id
+router.delete('/:id',
+  protect, authorize('products:delete'),
+  asyncWrap(async (req, res) => {
+    const product = await Product.findById(req.params.id);
+    if (!product)
+      throw new AppError('Product not found', 404);
+    // Soft delete — sets isDeleted: true, not removed from DB
+    const snapshot = product.toObject();
+    await product.softDelete(req.user.userId);
+    // Audit the deletion
+    await audit.log({
+      action     : 'DELETE',
+      entity     : 'Product',
+      entityId   : product._id,
+      entityLabel: product.sku,
+      req,
+      before: snapshot,
+      after : null,
+    });
+    res.json({
+      message  : 'Product deactivated successfully',
+      productId: product._id,
+    });
+  })
+);
+// RESTORE /api/v1/products/:id/restore  (ADMIN only)
+router.post('/:id/restore',
+  protect, authorize('users:manage'),
+  asyncWrap(async (req, res) => {
+    const product = await Product.restore(req.params.id);
+    if (!product)
+      throw new AppError('Product not found', 404);
+    await audit.log({
+      action: 'RESTORE', entity: 'Product',
+      entityId: product._id, req, after: product.toObject(),
+    });
+    res.json({ message: 'Product restored', product });
+  })
+);
+ 
+✅  Checkpoint
+Delete a product via the API. Then run a direct MongoDB query (in Compass or mongosh): db.products.findOne({ _id: ObjectId('...') }). You should see the document still exists with isDeleted: true and a deletedAt timestamp. A GET /api/v1/products query should NOT include this product. GET /api/v1/products/:id should return 404.
+Pattern 3.4 — Multi-Depot Rebalancing Algorithm
+🔴  Why This Matters
+With multiple depots, you will almost always have an imbalance: Depot A has 400 units of Product X against a maximum of 500, while Depot B has 8 units against a minimum of 50 and is generating critical alerts. The obvious fix is to transfer stock between them — but in your current system, a human must manually identify this, calculate how much to transfer, and initiate it.
+A rebalancing suggestion engine does this analysis automatically across every product and every depot combination, ranks the suggestions by urgency, and returns actionable recommendations that a manager can approve in one click.
+🪜  Step-by-Step Implementation
+1
+Create rebalanceService.js
+The core algorithm.
+// Backend/server/services/rebalanceService.js
+const DepotStock = require('../models/DepotStock');
+const Product    = require('../models/Product');
+const Transaction= require('../models/Transaction');
+/**
+ * Find optimal rebalancing transfers for a product,
+ * or for ALL products if no productId is given.
+ */
+async function suggestRebalancing(productId=null) {
+  // Load products to rebalance
+  const products = productId
+    ? [await Product.findById(productId).lean()]
+    : await Product.find({}).lean();
+  const allSuggestions = [];
+  for (const product of products) {
+    if (!product) continue;
+    // Load all depot stock levels for this product
+    const stocks = await DepotStock.find(
+      { productId: product._id }
+    ).populate('depotId', 'name').lean();
+    if (stocks.length < 2) continue; // need 2+ depots
+    // ── Classify each depot as over- or under-stocked ──
+    const overstocked  = stocks.filter(s =>
+      s.quantity > product.maxStockLevel * 0.75);
+    const understocked = stocks.filter(s =>
+      s.quantity < product.minStockLevel);
+    if (!understocked.length || !overstocked.length)
+      continue; // no imbalance to fix
+    // ── Generate suggestions ──────────────────────────
+    for (const under of understocked) {
+      for (const over of overstocked) {
+        // Skip if same depot
+        if (under.depotId._id.toString() ===
+            over.depotId._id.toString()) continue;
+        // How much does the under-stocked depot need?
+        // Target: 150% of minimum stock level
+        const deficitQty = Math.ceil(
+          product.minStockLevel * 1.5 - under.quantity
+        );
+        // How much can the over-stocked depot spare?
+        // Keep at least 60% of max stock level
+        const surplusQty = Math.floor(
+          over.quantity - product.maxStockLevel * 0.6
+        );
+        const transferQty = Math.min(
+          Math.max(deficitQty, 0),
+          Math.max(surplusQty, 0)
+        );
+        if (transferQty <= 0) continue;
+        // ── Determine urgency ────────────────────────
+        let urgency;
+        if (under.quantity === 0)          urgency = 'critical';
+        else if (under.quantity <
+          product.minStockLevel * 0.5)     urgency = 'high';
+        else                               urgency = 'medium';
+        allSuggestions.push({
+          productId  : product._id,
+          productName: product.name,
+          productSku : product.sku,
+          fromDepot  : {
+            id  : over.depotId._id,
+            name: over.depotId.name,
+            currentQty: over.quantity,
+          },
+          toDepot: {
+            id  : under.depotId._id,
+            name: under.depotId.name,
+            currentQty: under.quantity,
+          },
+          transferQty,
+          urgency,
+          reason: `${under.depotId.name} has only
+            ${under.quantity} units (min: ${product.minStockLevel}).`,
+          estimatedImpact: `After transfer: ${under.depotId.name}
+            → ${under.quantity + transferQty} units.`,
+        });
+      }
+    }
+  }
+  // ── Sort: critical first, then high, then medium ────
+  const urgencyOrder = { critical:0, high:1, medium:2 };
+  return allSuggestions.sort((a, b) =>
+    (urgencyOrder[a.urgency]||3) -
+    (urgencyOrder[b.urgency]||3)
+  );
+}
+module.exports = { suggestRebalancing };
+ 
+2
+Wire into the API with a one-click execute option
+Suggestions are read-only; execution goes through the existing transferService.
+// Backend/server/routes/v1/rebalance.js
+const { suggestRebalancing }
+  = require('../../services/rebalanceService');
+const { executeTransfer }
+  = require('../../services/transferService');
+// GET /api/v1/rebalance/suggestions
+// Returns all cross-depot rebalancing opportunities
+router.get('/suggestions', protect,
+  authorize('depots:manage'),
+  asyncWrap(async (req, res) => {
+    const { productId } = req.query;
+    const suggestions   = await suggestRebalancing(
+      productId || null);
+    res.json({
+      count: suggestions.length,
+      suggestions,
+    });
+  })
+);
+// POST /api/v1/rebalance/execute
+// Manager approves a suggestion — executes the transfer
+router.post('/execute', protect,
+  authorize('transfers:create'),
+  asyncWrap(async (req, res) => {
+    const { productId, fromDepotId,
+            toDepotId, quantity } = req.body;
+    const result = await executeTransfer({
+      productId, fromDepotId, toDepotId,
+      quantity: parseInt(quantity),
+      userId  : req.user.userId,
+      notes   : 'Rebalancing transfer (system suggested)',
+    });
+    res.status(201).json({
+      message: 'Rebalancing transfer executed',
+      ...result,
+    });
+  })
+);
+ 
+✅  Checkpoint
+Create two depot stock records for the same product: Depot A with 400 units (max 500), Depot B with 10 units (min 50). Call GET /api/v1/rebalance/suggestions. You should receive one suggestion from Depot A to Depot B with urgency: high and a calculated transferQty. Then call POST /api/v1/rebalance/execute with those values and verify the quantities updated correctly in both depots.
+🧠  Section 3 Complete
+Your system now has: immutable audit trail · intelligent alert engine · recoverable soft deletes · automated rebalancing suggestions
+✅  Master Progress Checklist
+Use this to track your implementation. Check each item as you complete it.
+Section 2 — Backend Architecture
+Pattern 2.1  Global Error Handler + Logger
+☐  npm install winston winston-daily-rotate-file
+☐  Create Backend/server/config/logger.js
+☐  Create Backend/server/middleware/errorHandler.js
+☐  Register errorHandler as last app.use() in server.js
+☐  Replace all try/catch blocks with asyncWrap()
+☐  Test: throw AppError in a route — see JSON error + log file
+Pattern 2.2  Universal Pagination
+☐  Add text indexes and compound indexes to Product and Transaction models
+☐  Create Backend/server/utils/queryBuilder.js
+☐  Replace .find() with paginate() in all list routes
+☐  Test: GET /api/v1/products?page=1&limit=5 returns pagination object
+Pattern 2.3  Atomic Stock Transfers
+☐  Confirm MongoDB Atlas replica set is active (it is by default)
+☐  Add compound unique index to DepotStock model
+☐  Create Backend/server/services/transferService.js
+☐  Update transfers route to use executeTransfer()
+☐  Test: Force crash between writes — verify neither depot is changed
+Pattern 2.4  Gunicorn + BullMQ
+☐  pip install gunicorn
+☐  Create Backend/code/wsgi.py
+☐  npm install bullmq ioredis
+☐  Create Backend/server/config/redis.js
+☐  Create Backend/server/services/forecastService.js
+☐  Create forecast routes (enqueue + status)
+☐  Test: POST enqueue returns jobId in < 100ms, status transitions to completed
+Pattern 2.5  Circuit Breaker + API Versioning
+☐  Create Backend/server/services/mlClient.js
+☐  Move all routes under /api/v1 in server.js
+☐  Add /health endpoint
+☐  Test: Stop Flask, make 5+ requests, confirm circuit opens and cache is served
+Section 3 — Business Logic
+Pattern 3.1  Audit Log
+☐  Create Backend/server/models/AuditLog.js with indexes
+☐  Create Backend/server/services/auditService.js
+☐  Add audit.log() calls to all CREATE, UPDATE, DELETE controllers
+☐  Create GET /api/v1/audit route
+☐  Test: Update a product, query audit log, see before/after snapshots
+Pattern 3.2  Alert Engine
+☐  npm install node-cron
+☐  Add supplierLeadTimeDays, maxStockLevel fields to Product model
+☐  Create Backend/server/services/alertEngine.js
+☐  Schedule engine in server.js (hourly + startup)
+☐  Add POST /api/v1/alerts/trigger-engine route
+☐  Test: Set product qty to 0, trigger engine, see STOCK_OUT alert
+Pattern 3.3  Soft Delete
+☐  Create Backend/server/models/plugins/softDelete.js
+☐  Attach plugin to Product, Depot, Supplier, Alert, User models
+☐  Update all DELETE controllers to use product.softDelete()
+☐  Add RESTORE endpoint (ADMIN only)
+☐  Test: Delete product, verify it exists in DB with isDeleted: true, verify GET returns 404
+Pattern 3.4  Rebalancing Algorithm
+☐  Create Backend/server/services/rebalanceService.js
+☐  Create GET /api/v1/rebalance/suggestions route
+☐  Create POST /api/v1/rebalance/execute route
+☐  Test: Create imbalanced depot stocks, get suggestion, execute, verify quantities
+When all boxes are checked, Sections 2 and 3 are complete.
+Next: Section 4 (Frontend Design System) · Section 5 (Testing + CI/CD)

@@ -24,4 +24,17 @@ const transactionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Text search index
+transactionSchema.index({
+  productName: 'text',
+  productSku: 'text',
+  reason: 'text',
+  notes: 'text'
+}, { name: 'transaction_text_index' });
+
+// Compound indexes for common filter combinations
+transactionSchema.index({ toDepotId: 1, createdAt: -1 });
+transactionSchema.index({ fromDepotId: 1, createdAt: -1 });
+transactionSchema.index({ productId: 1, transactionType: 1 });
+
 module.exports = mongoose.model('Transaction', transactionSchema);

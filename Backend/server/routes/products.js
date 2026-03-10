@@ -11,24 +11,21 @@ const { generateUniqueSKU, updateProductStatus, updateProductStockFromDepots } =
 const { createStockAlert, checkDepotCapacity } = require('../utils/alertHelpers');
 const { recalculateDepotMetrics } = require('../utils/depotHelpers');
 const { requirePermission } = require('../middleware/permissions');
+const { paginate } = require('../utils/queryBuilder');
 
 // GET all products
 router.get('/', async (req, res, next) => {
   try {
-    const { search, category, status, location, page = 1, limit = 20 } = req.query;
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(Math.max(1, parseInt(limit)), 500); // max 500 per page
-    const query = { userId: req.organizationId };
+    const { search, category, status, location, ...restQuery } = req.query;
+
+    const query = { userId: req.organizationId, ...restQuery };
 
     if (location) {
       query.location = location;
     }
 
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } }
-      ];
+      query.search = search; // Let queryBuilder handle $text search
     }
 
     if (category && category !== 'all') {
@@ -39,15 +36,10 @@ router.get('/', async (req, res, next) => {
       query.status = status;
     }
 
-    const products = await Product.find(query)
-      .limit(limitNum)
-      .skip((pageNum - 1) * limitNum)
-      .sort({ updatedAt: -1 });
-
-    const total = await Product.countDocuments(query);
+    const result = await paginate(Product, query);
 
     res.json({
-      products: products.map(product => {
+      products: result.data.map(product => {
         const dailySales = Number(product.dailySales || 5);
         const weeklySales = Number(product.weeklySales || 35);
         const leadTime = Number(product.leadTime || 7);
@@ -92,13 +84,14 @@ router.get('/', async (req, res, next) => {
           riskLevel,
           aiExplanation,
           depotDistribution: product.depotDistribution,
-          lastSoldDate: product.lastSoldDate ? product.lastSoldDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+          lastSoldDate: product.lastSoldDate ? new Date(product.lastSoldDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         };
       }),
-      total,
-      pages: Math.ceil(total / limitNum),
-      currentPage: pageNum,
-      limit: limitNum
+      total: result.pagination.total,
+      pages: result.pagination.pages,
+      currentPage: result.pagination.page,
+      limit: result.pagination.limit,
+      pagination: result.pagination
     });
   } catch (error) {
     next(error);

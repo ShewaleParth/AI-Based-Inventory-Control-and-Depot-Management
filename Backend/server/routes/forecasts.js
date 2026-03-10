@@ -1,6 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const Forecast = require('../models/Forecast');
+const { asyncWrap } = require('../middleware/errorHandler');
+const { enqueueForecast, getJobStatus } = require('../services/forecastService');
+
+// POST /enqueue -> Queue async ML forecast job
+router.post('/enqueue', asyncWrap(async (req, res) => {
+  const { productId, days = 30 } = req.body;
+  const userId = req.organizationId;
+
+  if (!productId) {
+    return res.status(400).json({ message: 'productId is required' });
+  }
+
+  const result = await enqueueForecast(productId, userId, days);
+
+  if (result.cached) {
+    return res.json({ source: 'cache', data: result.data });
+  }
+
+  res.status(202).json({ jobId: result.jobId, status: 'queued' });
+}));
+
+// GET /status/:jobId -> Poll status
+router.get('/status/:jobId', asyncWrap(async (req, res) => {
+  const status = await getJobStatus(req.params.jobId);
+  res.json(status);
+}));
 
 // GET all forecasts
 router.get('/', async (req, res, next) => {

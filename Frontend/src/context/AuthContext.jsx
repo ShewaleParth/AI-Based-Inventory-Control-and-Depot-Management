@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
    */
   const silentRefresh = async () => {
     try {
-      const response = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+      const response = await axios.post('/api/v1/auth/refresh', {}, { withCredentials: true });
       const { token: newToken } = response.data;
       setToken(newToken);
       return newToken;
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
         const newToken = await silentRefresh();
         if (newToken) {
           // Fetch user profile with the fresh access token
-          const response = await axios.get('/api/auth/me', {
+          const response = await axios.get('/api/v1/auth/me', {
             headers: { Authorization: `Bearer ${newToken}` }
           });
           if (response.data.user) {
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password }, { withCredentials: true });
+      const response = await axios.post('/api/v1/auth/login', { email, password }, { withCredentials: true });
       const { token: accessToken, user } = response.data;
       // Store access token in memory only — not localStorage
       setToken(accessToken);
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (firstName, lastName, email, password, confirmPassword) => {
     try {
-      const response = await axios.post('/api/auth/signup', {
+      const response = await axios.post('/api/v1/auth/signup', {
         first_name: firstName,
         last_name: lastName,
         email,
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
 
   const verifyOTP = async (email, otp) => {
     try {
-      const response = await axios.post('/api/auth/verify-otp', { email, otp }, { withCredentials: true });
+      const response = await axios.post('/api/v1/auth/verify-otp', { email, otp }, { withCredentials: true });
       const { token: accessToken, user } = response.data;
       setToken(accessToken);
       setUser(user);
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
 
   const forgotPassword = async (email) => {
     try {
-      const response = await axios.post('/api/auth/forgot-password', { email });
+      const response = await axios.post('/api/v1/auth/forgot-password', { email });
       return {
         success: true,
         message: response.data.message
@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }) => {
 
   const resetPassword = async (email, otp, newPassword) => {
     try {
-      const response = await axios.post('/api/auth/reset-password', {
+      const response = await axios.post('/api/v1/auth/reset-password', {
         email,
         otp,
         newPassword
@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       // Tell the server to revoke the refresh token from Redis and clear the cookie
-      await axios.post('/api/auth/logout', {}, { withCredentials: true });
+      await axios.post('/api/v1/auth/logout', {}, { withCredentials: true });
     } catch {
       // Logout anyway even if server is unreachable
     }
@@ -219,7 +219,7 @@ export const AuthProvider = ({ children }) => {
    */
   const refreshUser = async () => {
     try {
-      const response = await axios.get('/api/auth/me', {
+      const response = await axios.get('/api/v1/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.user) {

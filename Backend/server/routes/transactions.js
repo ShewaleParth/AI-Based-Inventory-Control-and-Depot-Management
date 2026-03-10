@@ -6,6 +6,8 @@ const Transaction = require('../models/Transaction');
 const DepotAssignment = require('../models/DepotAssignment');
 const { createStockAlert } = require('../utils/alertHelpers');
 const { requirePermission, can } = require('../middleware/permissions');
+const { paginate } = require('../utils/queryBuilder');
+const { executeTransfer } = require('../services/transferService');
 
 /**
  * Helper: Check if a non-admin user has write access to a specific depot
@@ -31,10 +33,11 @@ async function checkDepotWriteAccess(userId, userRole, depotId, organizationId) 
 // GET all transactions
 router.get('/', async (req, res, next) => {
   try {
-    const { depotId, productId, type, startDate, endDate, limit = 1000 } = req.query;
+    const { depotId, productId, type, startDate, endDate, ...restQuery } = req.query;
 
-    const query = { userId: req.organizationId };
-    
+    const query = { userId: req.organizationId, ...restQuery };
+
+    // Convert generic query aliases to actual schema queries
     if (depotId) {
       query.$or = [{ toDepotId: depotId }, { fromDepotId: depotId }];
     }
@@ -46,11 +49,13 @@ router.get('/', async (req, res, next) => {
       if (endDate) query.timestamp.$lte = new Date(endDate);
     }
 
-    const transactions = await Transaction.find(query)
-      .sort({ timestamp: -1 })
-      .limit(parseInt(limit));
+    const result = await paginate(Transaction, query);
 
-    res.json({ transactions });
+    // Provide the expected payload while supporting pagination
+    res.json({
+      transactions: result.data,
+      pagination: result.pagination
+    });
   } catch (error) {
     next(error);
   }
@@ -277,14 +282,6 @@ router.post('/transfer', requirePermission('transfers:create'), async (req, res,
   try {
     const { productId, quantity, fromDepotId, toDepotId, reason, notes } = req.body;
 
-    if (!productId || !quantity || !fromDepotId || !toDepotId) {
-      return res.status(400).json({ message: 'Product, quantity, and both depots are required' });
-    }
-
-    if (fromDepotId === toDepotId) {
-      return res.status(400).json({ message: 'Cannot transfer to the same depot' });
-    }
-
     // Check write access for source depot (must have transfer permission)
     const accessCheck = await checkDepotWriteAccess(req.userId, req.userRole, fromDepotId, req.organizationId);
     if (!accessCheck.allowed) {
@@ -297,120 +294,21 @@ router.post('/transfer', requirePermission('transfers:create'), async (req, res,
       return res.status(403).json({ message: 'You do not have transfer permission for this depot' });
     }
 
-    const product = await Product.findOne({ _id: productId, userId: req.organizationId });
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    const fromDepot = await Depot.findOne({ _id: fromDepotId, userId: req.organizationId });
-    const toDepot = await Depot.findOne({ _id: toDepotId, userId: req.organizationId });
-
-    if (!fromDepot || !toDepot) {
-      return res.status(404).json({ message: 'One or both depots not found' });
-    }
-
-    // Check if enough stock in source depot
-    const fromDepotDistIndex = product.depotDistribution.findIndex(
-      d => d.depotId.toString() === fromDepotId
-    );
-
-    if (fromDepotDistIndex < 0 || product.depotDistribution[fromDepotDistIndex].quantity < parseInt(quantity)) {
-      return res.status(400).json({ message: 'Insufficient stock in source depot' });
-    }
-
-    const previousStock = product.stock;
-
-    // Update source depot distribution
-    product.depotDistribution[fromDepotDistIndex].quantity -= parseInt(quantity);
-    product.depotDistribution[fromDepotDistIndex].lastUpdated = new Date();
-
-    if (product.depotDistribution[fromDepotDistIndex].quantity === 0) {
-      product.depotDistribution.splice(fromDepotDistIndex, 1);
-    }
-
-    // Update destination depot distribution
-    const toDepotDistIndex = product.depotDistribution.findIndex(
-      d => d.depotId.toString() === toDepotId
-    );
-
-    if (toDepotDistIndex >= 0) {
-      product.depotDistribution[toDepotDistIndex].quantity += parseInt(quantity);
-      product.depotDistribution[toDepotDistIndex].lastUpdated = new Date();
-    } else {
-      product.depotDistribution.push({
-        depotId: toDepot._id,
-        depotName: toDepot.name,
-        quantity: parseInt(quantity),
-        lastUpdated: new Date()
-      });
-    }
-
-    await product.save();
-
-    // Update source depot
-    const fromDepotProductIndex = fromDepot.products.findIndex(
-      p => p.productId.toString() === productId
-    );
-
-    if (fromDepotProductIndex >= 0) {
-      fromDepot.products[fromDepotProductIndex].quantity -= parseInt(quantity);
-      fromDepot.products[fromDepotProductIndex].lastUpdated = new Date();
-
-      if (fromDepot.products[fromDepotProductIndex].quantity === 0) {
-        fromDepot.products.splice(fromDepotProductIndex, 1);
-      }
-    }
-
-    fromDepot.currentUtilization -= parseInt(quantity);
-    fromDepot.itemsStored = fromDepot.products.length;
-    await fromDepot.save();
-
-    // Update destination depot
-    const toDepotProductIndex = toDepot.products.findIndex(
-      p => p.productId.toString() === productId
-    );
-
-    if (toDepotProductIndex >= 0) {
-      toDepot.products[toDepotProductIndex].quantity += parseInt(quantity);
-      toDepot.products[toDepotProductIndex].lastUpdated = new Date();
-    } else {
-      toDepot.products.push({
-        productId: product._id,
-        productName: product.name,
-        productSku: product.sku,
-        quantity: parseInt(quantity),
-        lastUpdated: new Date()
-      });
-    }
-
-    toDepot.currentUtilization += parseInt(quantity);
-    toDepot.itemsStored = toDepot.products.length;
-    await toDepot.save();
-
-    // Create transaction record
-    const transaction = new Transaction({
-      userId: req.organizationId,
-      productId: product._id,
-      productName: product.name,
-      productSku: product.sku,
-      transactionType: 'transfer',
+    // executeTransfer natively handles all validations and MongoDB transaction requirements
+    const result = await executeTransfer({
+      productId,
+      fromDepotId,
+      toDepotId,
       quantity: parseInt(quantity),
-      fromDepot: fromDepot.name,
-      fromDepotId: fromDepot._id,
-      toDepot: toDepot.name,
-      toDepotId: toDepot._id,
-      previousStock,
-      newStock: previousStock,
-      reason: reason || 'Stock transfer',
-      notes: notes || '',
-      performedBy: req.userRole === 'admin' ? 'Admin' : 'Employee'
+      userId: req.organizationId,
+      notes: notes || reason || 'Stock transfer',
     });
 
-    await transaction.save();
+    const product = await Product.findById(productId);
 
     res.status(201).json({
       message: 'Stock transferred successfully',
-      transaction,
+      transaction: result,
       product: {
         id: product._id,
         stock: product.stock,
@@ -431,8 +329,8 @@ router.post('/generate-activity', async (req, res, next) => {
     const depots = await Depot.find({ userId: req.organizationId });
 
     if (products.length === 0 || depots.length === 0) {
-      return res.status(400).json({ 
-        message: 'No products or depots found. Please add products and depots first.' 
+      return res.status(400).json({
+        message: 'No products or depots found. Please add products and depots first.'
       });
     }
 

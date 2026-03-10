@@ -107,7 +107,7 @@ const REFRESH_COOKIE_OPTIONS = {
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
   maxAge: REFRESH_TOKEN_TTL * 1000, // ms
-  path: '/api/auth', // only sent to auth routes
+  path: '/api/v1/auth', // only sent to auth routes
 };
 
 // ─── Backward-compatible alias ────────────────────────────────────────────────
