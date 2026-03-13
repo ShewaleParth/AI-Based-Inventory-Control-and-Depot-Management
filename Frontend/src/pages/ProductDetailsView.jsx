@@ -64,7 +64,7 @@ const ProductDetailsView = () => {
                 <AlertCircle size={48} color="#ef4444" />
                 <h3>Failed to Load Product</h3>
                 <p>{error}</p>
-                <button onClick={() => navigate('/inventory')} className="back-btn">
+                <button onClick={() => navigate('/dashboard')} className="back-btn">
                     <ArrowLeft size={18} /> Back to Inventory
                 </button>
             </div>
@@ -103,11 +103,11 @@ const ProductDetailsView = () => {
 
             {/* Header */}
             <div className="product-details-header">
-                <button onClick={() => navigate('/')} className="back-btn">
+                <button onClick={() => navigate('/dashboard')} className="back-btn">
                     <ArrowLeft size={20} /> Back to Inventory
                 </button>
                 <div className="header-actions">
-                    <button className="action-btn secondary" onClick={() => navigate('/')}>
+                    <button className="action-btn secondary" onClick={() => navigate('/dashboard')}>
                         <Package size={18} /> View All Products
                     </button>
                     <button className="action-btn primary" onClick={() => setIsTransactionModalOpen(true)}>

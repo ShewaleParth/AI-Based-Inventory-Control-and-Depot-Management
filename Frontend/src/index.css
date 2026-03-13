@@ -2299,6 +2299,14 @@ input {
 .modern-table td {
   padding: 16px;
   border-bottom: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+.modern-table input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
 }
 
 .product-thumb {
@@ -3469,6 +3477,7 @@ input {
   font-size: 24px;
   font-weight: 700;
   font-family: var(--font-heading);
+  color: var(--text-main);
 }
 
 .capacity-bar-container {
@@ -4093,6 +4102,7 @@ input {
   padding: 16px;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
+  color: var(--text-main);
 }
 
 .inventory-table tbody tr:hover {
@@ -5337,4 +5347,45 @@ input {
     flex-direction: column;
     gap: 4px;
   }
+}
+
+/* ========================================
+   DEPOT DETAILS STYLES
+======================================== */
+.movement-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+}
+
+.movement-item:last-child {
+  border-bottom: none;
+}
+
+.movement-info {
+  display: flex;
+  flex-direction: column;
+  color: var(--text-main);
+}
+
+.movement-details {
+  flex: 1;
+  color: var(--text-main);
+}
+
+.movement-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.movement-quantity {
+  margin-left: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
 }

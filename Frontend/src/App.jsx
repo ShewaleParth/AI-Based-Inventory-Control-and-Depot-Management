@@ -19,7 +19,7 @@ import StockSearchTracking from './pages/StockSearchTracking';
 import Notifications from './pages/Notifications';
 import AdminPanel from './pages/AdminPanel';
 
-function AppContent() {
+function AppLayout({ children }) {
   const { activeItem, setActiveItem } = useNavigation();
   const [theme, setTheme] = useState('light');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -55,6 +55,43 @@ function AppContent() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  return (
+    <ProtectedRoute>
+      <div className="app-container">
+        {/* Sidebar Overlay for Mobile */}
+        <div
+          className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
+          onClick={closeSidebar}
+        />
+
+        <Sidebar
+          activeItem={activeItem}
+          setActiveItem={setActiveItem}
+          isMobileOpen={isSidebarOpen}
+          isCollapsed={isSidebarCollapsed}
+          onClose={closeSidebar}
+          onToggleCollapse={toggleSidebarCollapse}
+        />
+
+        <div className={`main-layout ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+          <Header
+            theme={theme}
+            toggleTheme={toggleTheme}
+            title={activeItem}
+            onMenuClick={toggleSidebar}
+          />
+          <main className="content">
+            {children}
+          </main>
+        </div>
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+function AppContent() {
+  const { activeItem } = useNavigation();
+
   const renderContent = () => {
     switch (activeItem) {
       case 'Dashboard':
@@ -85,38 +122,7 @@ function AppContent() {
     }
   };
 
-  return (
-    <ProtectedRoute>
-      <div className="app-container">
-        {/* Sidebar Overlay for Mobile */}
-        <div
-          className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`}
-          onClick={closeSidebar}
-        />
-
-        <Sidebar
-          activeItem={activeItem}
-          setActiveItem={setActiveItem}
-          isMobileOpen={isSidebarOpen}
-          isCollapsed={isSidebarCollapsed}
-          onClose={closeSidebar}
-          onToggleCollapse={toggleSidebarCollapse}
-        />
-
-        <div className={`main-layout ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-          <Header
-            theme={theme}
-            toggleTheme={toggleTheme}
-            title={activeItem}
-            onMenuClick={toggleSidebar}
-          />
-          <main className="content">
-            {renderContent()}
-          </main>
-        </div>
-      </div>
-    </ProtectedRoute>
-  );
+  return renderContent();
 }
 
 function App() {
@@ -131,15 +137,15 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
 
               {/* Protected App Shell — all pages rendered via activeItem switch */}
-              <Route path="/dashboard" element={<AppContent />} />
+              <Route path="/dashboard" element={<AppLayout><AppContent /></AppLayout>} />
 
-              {/* Product Details Route */}
+              {/* Product Details Route within AppLayout */}
               <Route
                 path="/product/:productId"
                 element={
-                  <ProtectedRoute>
+                  <AppLayout>
                     <ProductDetailsView />
-                  </ProtectedRoute>
+                  </AppLayout>
                 }
               />
 
