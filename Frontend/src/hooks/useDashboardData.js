@@ -9,6 +9,7 @@ export const useDashboardData = () => {
     const [alerts, setAlerts] = useState([]);
     const [depots, setDepots] = useState([]);
     const [topSKUs, setTopSKUs] = useState([]);
+    const [categoryDistribution, setCategoryDistribution] = useState(null);
     const [selectedDepot, setSelectedDepot] = useState('all');
 
     const fetchData = useCallback(async () => {
@@ -24,6 +25,9 @@ export const useDashboardData = () => {
 
             // 1. Process Metrics
             if (statsRes && statsRes.kpis) {
+                if (statsRes.stats?.categoryDistribution) {
+                    setCategoryDistribution(statsRes.stats.categoryDistribution);
+                }
                 const kpiMap = {};
                 statsRes.kpis.forEach(kpi => kpiMap[kpi.title] = kpi);
 
@@ -197,6 +201,7 @@ export const useDashboardData = () => {
         topSKUs,
         selectedDepot,
         setSelectedDepot,
-        handleReorder
+        handleReorder,
+        categoryDistribution
     };
 };

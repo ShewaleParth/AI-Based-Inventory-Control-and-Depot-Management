@@ -23,9 +23,27 @@ router.get('/stats', async (req, res, next) => {
 
     console.log(`[DASHBOARD] Found: ${totalProducts} products, ${lowStockCount} low stock`);
 
-    // Calculate inventory value from all products
-    const userProducts = await Product.find({ userId }).select('price stock _id');
+    // Calculate inventory value and category counts from all products
+    const userProducts = await Product.find({ userId }).select('price stock _id category');
     const totalValue = userProducts.reduce((sum, p) => sum + ((p.price || 0) * (p.stock || 0)), 0);
+
+    const categoryDistribution = {
+      'Apparel': 0,
+      'Electronics': 0,
+      'Sneakers': 0,
+      'Accessories': 0
+    };
+
+    userProducts.forEach(p => {
+      const raw = (p.category || '').toLowerCase();
+      let cat = 'Accessories'; // Default fallback
+      if (raw.includes('apparel') || raw.includes('cloth') || raw.includes('shirt') || raw.includes('wear')) cat = 'Apparel';
+      else if (raw.includes('electron') || raw.includes('tech') || raw.includes('gadget') || raw.includes('device')) cat = 'Electronics';
+      else if (raw.includes('shoe') || raw.includes('sneaker') || raw.includes('footwear') || raw.includes('boot')) cat = 'Sneakers';
+      else if (raw.includes('accessor')) cat = 'Accessories';
+      
+      categoryDistribution[cat]++;
+    });
 
     // Get alerts status
     const productIds = userProducts.map(p => p._id);
@@ -59,7 +77,8 @@ router.get('/stats', async (req, res, next) => {
         outOfStockCount,
         totalDepots,
         unreadAlerts,
-        totalValue
+        totalValue,
+        categoryDistribution
       }
     });
   } catch (error) {
