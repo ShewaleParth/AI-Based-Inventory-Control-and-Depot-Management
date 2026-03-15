@@ -1,0 +1,27 @@
+----------------------------------------
+Metrics for Delay Risk Model
+Target Variable: delay_days
+----------------------------------------
+MSE: 2.5109
+RMSE: 1.5846
+MAE: 0.8581
+R-squared: 0.6835
+
+----------------------------------------
+Metrics for Quality Risk Model
+Target Variable: rejection_ratio
+----------------------------------------
+MSE: 0.0003
+RMSE: 0.0183
+MAE: 0.0083
+R-squared: 0.8203
+
+----------------------------------------
+Metrics for Fulfillment Risk Model
+Target Variable: fulfillment_ratio
+----------------------------------------
+MSE: 0.0029
+RMSE: 0.0540
+MAE: 0.0208
+R-squared: 0.3033
+

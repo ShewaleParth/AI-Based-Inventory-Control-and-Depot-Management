@@ -41,7 +41,7 @@ const StockSearchTracking = () => {
         setLoading(true);
         try {
             const [productsData, depotsData] = await Promise.all([
-                api.getProducts(),
+                api.getProducts({ limit: 1000 }),
                 api.getDepots()
             ]);
 
