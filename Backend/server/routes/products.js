@@ -25,7 +25,7 @@ router.get('/', async (req, res, next) => {
     }
 
     if (search) {
-      query.search = search; // Let queryBuilder handle $text search
+      query.search = search;
     }
 
     if (category && category !== 'all') {

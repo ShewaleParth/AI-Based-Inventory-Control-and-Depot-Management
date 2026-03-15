@@ -43,7 +43,7 @@ async function paginate(Model, reqQuery, pop = null) {
 
     // 7. Apply sort, pagination
     const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, parseInt(limit)); // max 100 per page
+    const limitNum = Math.min(1000, parseInt(limit)); // max 1000 per page
     const skip = (pageNum - 1) * limitNum;
 
     query = query.sort(sort).skip(skip).limit(limitNum);
