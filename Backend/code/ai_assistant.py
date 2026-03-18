@@ -30,16 +30,13 @@ depots_collection = db['depots']
 transactions_collection = db['transactions']
 forecasts_collection = db['forecasts']
 
-# Conversation memory (in production, use Redis or database)
+
 conversation_history = {}
 
 
-# ============================================================================
-# TOOL FUNCTIONS - These are called by the AI agent
-# ============================================================================
+
 
 def get_low_stock_products(threshold: int = None):
-    """Get products with stock below reorder point"""
     try:
         query = {}
         if threshold:
@@ -70,9 +67,9 @@ def get_low_stock_products(threshold: int = None):
 
 
 def get_products_running_out(days: int = 7):
-    """Get products that will run out in the next N days based on current inventory"""
+   
     try:
-        # Get products from inventory with low stock or critical status
+       
         products = list(products_collection.find({
             "$or": [
                 {"status": {"$in": ["low-stock", "out-of-stock"]}},

@@ -1,0 +1,139 @@
+sku,name,category,stock,price,supplier,reorderPoint,dailySales,weeklySales,brand,leadTime,depot,image,riskLevel,stockoutIn,reorderQty
+ELE-001,GoPro HERO 11 Black,Electronics,12,399,TechSource,40,6,42,GoPro,7,Animesh's Depot,https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&q=80,HIGH RISK,2,80
+ELE-002,NVIDIA GeForce RTX 4070 12GB GDDR6X,Electronics,8,599,TechSource,35,4,28,NVIDIA,14,Animesh's Depot,https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400&q=80,HIGH RISK,2,70
+ELE-003,AMD Ryzen 7 5800X 8-Core 3.8GHz CPU,Electronics,45,299,TechSource,40,5,35,AMD,10,Animesh's Depot,https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=400&q=80,MEDIUM,9,80
+ELE-004,Logitech C920 HD Webcam,Electronics,150,79,TechSource,30,8,56,Logitech,5,Animesh's Depot,https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=400&q=80,SAFE,19,60
+ELE-005,"SanDisk 1TB 2.5"" SATA Internal SSD",Electronics,95,89,TechSource,30,7,49,SanDisk,7,Animesh's Depot,https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&q=80,MEDIUM,14,60
+ELE-006,Corsair Vengeance LPX 16GB DDR4 3200MHz RAM,Electronics,120,69,TechSource,30,9,63,Corsair,5,Animesh's Depot,https://images.unsplash.com/photo-1541029071515-84cc54f84dc5?w=400&q=80,SAFE,13,60
+ELE-007,TP-Link Archer AC1750 Dual Band WiFi Router,Electronics,180,59,TechSource,25,10,70,TP-Link,5,Animesh's Depot,https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=400&q=80,SAFE,18,50
+ELE-008,Seagate Expansion 2TB USB 3.0 External HDD,Electronics,140,64,TechSource,30,8,56,Seagate,7,Animesh's Depot,https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&q=80,SAFE,18,60
+ELE-009,Anker 7-in-1 USB-C Hub with 4K HDMI,Electronics,200,45,TechSource,20,12,84,Anker,3,Animesh's Depot,https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400&q=80,SAFE,17,40
+ELE-010,Blue Yeti USB Microphone,Electronics,15,129,AudioPro,40,6,42,Blue,7,Animesh's Depot,https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400&q=80,HIGH RISK,3,80
+ELE-011,Razer BlackWidow Keyboard,Electronics,65,139,TechSource,35,7,49,Razer,7,Animesh's Depot,https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&q=80,MEDIUM,9,70
+ELE-012,HyperX Cloud II Headset,Electronics,85,99,TechSource,30,8,56,HyperX,5,Animesh's Depot,https://images.unsplash.com/photo-1599669454699-248893623440?w=400&q=80,MEDIUM,11,60
+ELE-013,Elgato Stream Deck,Electronics,18,149,TechSource,40,5,35,Elgato,10,Animesh's Depot,https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400&q=80,HIGH RISK,4,80
+ELE-014,Western Digital My Book 4TB USB 3.0 Desktop HDD,Electronics,110,99,TechSource,30,6,42,Western Digital,7,Animesh's Depot,https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&q=80,SAFE,18,60
+ELE-015,"ASUS TUF VG249Q 24"" FHD 144Hz Gaming Monitor",Electronics,35,189,TechSource,35,4,28,ASUS,10,Animesh's Depot,https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&q=80,MEDIUM,9,70
+ELE-016,Belkin 12-Outlet Surge Protector,Electronics,190,34,TechSource,25,11,77,Belkin,3,Animesh's Depot,https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=400&q=80,SAFE,17,50
+ELE-017,Sony DualSense Controller,Electronics,75,69,GameWorld,30,8,56,Sony,7,Animesh's Depot,https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=400&q=80,MEDIUM,9,60
+ELE-018,Microsoft Xbox Controller,Electronics,90,59,GameWorld,30,9,63,Microsoft,5,Animesh's Depot,https://images.unsplash.com/photo-1592840496694-26d035b52b48?w=400&q=80,MEDIUM,10,60
+ELE-019,Nintendo Ring Fit Adventure,Electronics,12,79,GameWorld,40,7,49,Nintendo,7,Animesh's Depot,https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=400&q=80,HIGH RISK,2,80
+ELE-020,"Crucial MX500 500GB 2.5"" SATA Internal SSD",Electronics,130,54,TechSource,30,8,56,Crucial,5,Animesh's Depot,https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400&q=80,SAFE,16,60
+APP-021,Drew House Sweatshirt,Apparel,14,88,StyleHub,40,6,42,Drew House,10,Aayush's Depot,https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&q=80,HIGH RISK,3,80
+APP-022,Gildan Heavy Cotton T-Shirt,Apparel,220,12,FashionFirst,20,18,126,Gildan,3,Aayush's Depot,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80,SAFE,12,40
+APP-023,Hanes ComfortBlend Hoodie,Apparel,180,24,FashionFirst,25,14,98,Hanes,5,Aayush's Depot,https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&q=80,SAFE,13,50
+APP-024,Fruit of the Loom 5-Pack Tees,Apparel,160,22,FashionFirst,25,12,84,Fruit of the Loom,5,Aayush's Depot,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80,SAFE,13,50
+APP-025,Dickies Men's Long Sleeve Work Shirt,Apparel,95,32,UrbanWear,30,8,56,Dickies,7,Aayush's Depot,https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&q=80,MEDIUM,12,60
+APP-026,Carhartt Knit Beanie,Apparel,140,18,OutdoorGear,30,10,70,Carhartt,5,Aayush's Depot,https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&q=80,SAFE,14,60
+APP-027,Champion Reverse Weave Crew,Apparel,85,38,StyleHub,30,9,63,Champion,7,Aayush's Depot,https://images.unsplash.com/photo-1620799139834-6b8f844fbe61?w=400&q=80,MEDIUM,9,60
+APP-028,Wrangler Cowboy Cut Jeans,Apparel,110,42,DenimWorld,30,7,49,Wrangler,7,Aayush's Depot,https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80,SAFE,16,60
+APP-029,Lee Regular Fit Jeans,Apparel,125,38,DenimWorld,30,8,56,Lee,7,Aayush's Depot,https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80,SAFE,16,60
+APP-030,Levi's 505 Regular Fit Jeans,Apparel,18,58,DenimWorld,40,7,49,Levi's,10,Aayush's Depot,https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80,HIGH RISK,3,80
+APP-031,Columbia Men's Steens Mountain Full-Zip Fleece Jacket,Apparel,65,54,OutdoorGear,35,6,42,Columbia,10,Aayush's Depot,https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&q=80,MEDIUM,11,70
+APP-032,The North Face Borealis Backpack,Apparel,45,89,OutdoorGear,35,5,35,The North Face,10,Aayush's Depot,https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80,MEDIUM,9,70
+APP-033,Patagonia Men's Better Sweater 1/4-Zip Fleece,Apparel,55,119,OutdoorGear,35,4,28,Patagonia,14,Aayush's Depot,https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400&q=80,MEDIUM,14,70
+APP-034,Eddie Bauer Men's CirrusLite Down Jacket,Apparel,12,149,OutdoorGear,40,3,21,Eddie Bauer,14,Aayush's Depot,https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80,HIGH RISK,4,80
+APP-035,Uniqlo Heattech Long Sleeve,Apparel,200,19,FashionFirst,20,15,105,Uniqlo,3,Aayush's Depot,https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400&q=80,SAFE,13,40
+APP-036,H&M Basic Cotton T-Shirt,Apparel,250,9,FashionFirst,15,20,140,H&M,3,Aayush's Depot,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80,SAFE,13,30
+APP-037,Gap Men's Slim Fit Khaki Chino Pants,Apparel,90,48,FashionFirst,30,7,49,Gap,7,Aayush's Depot,https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&q=80,MEDIUM,13,60
+APP-038,Old Navy Cargo Shorts,Apparel,150,28,FashionFirst,25,10,70,Old Navy,5,Aayush's Depot,https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&q=80,SAFE,15,50
+APP-039,American Eagle Skinny Jeans,Apparel,70,54,FashionFirst,30,6,42,American Eagle,7,Aayush's Depot,https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80,MEDIUM,12,60
+APP-040,Hollister Graphic T-Shirt,Apparel,105,24,FashionFirst,30,9,63,Hollister,5,Aayush's Depot,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80,SAFE,12,60
+SNE-041,Nike Air Max 90,Sneakers,35,130,Footlocker,35,7,49,Nike,7,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,MEDIUM,5,70
+SNE-042,Adidas Superstar Sneakers,Sneakers,85,85,Footlocker,30,8,56,Adidas,7,Parth's Depot,https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&q=80,MEDIUM,11,60
+SNE-043,Nike Air Force 1 White,Sneakers,12,110,Footlocker,40,9,63,Nike,7,Parth's Depot,https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&q=80,HIGH RISK,2,80
+SNE-044,Adidas Stan Smith,Sneakers,95,90,Footlocker,30,7,49,Adidas,7,Parth's Depot,https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&q=80,MEDIUM,14,60
+SNE-045,Nike Revolution 6 Running,Sneakers,140,65,Footlocker,30,10,70,Nike,5,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,SAFE,14,60
+SNE-046,Adidas Cloudfoam Pure,Sneakers,120,70,Footlocker,30,8,56,Adidas,5,Parth's Depot,https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&q=80,SAFE,15,60
+SNE-047,Puma Cali Sport Sneakers,Sneakers,75,75,Footlocker,30,7,49,Puma,7,Parth's Depot,https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&q=80,MEDIUM,11,60
+SNE-048,Reebok Classic Leather,Sneakers,100,80,Footlocker,30,6,42,Reebok,7,Parth's Depot,https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=400&q=80,SAFE,17,60
+SNE-049,New Balance 574 Core,Sneakers,110,85,Footlocker,30,7,49,New Balance,7,Parth's Depot,https://images.unsplash.com/photo-1539185441755-769473a23570?w=400&q=80,SAFE,16,60
+SNE-050,Converse Chuck Taylor All Star,Sneakers,160,55,Footlocker,25,11,77,Converse,5,Parth's Depot,https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=400&q=80,SAFE,15,50
+SNE-051,Vans Old Skool Black/White,Sneakers,130,65,Footlocker,30,9,63,Vans,5,Parth's Depot,https://images.unsplash.com/photo-1543508282-6319a3e2621f?w=400&q=80,SAFE,14,60
+SNE-052,Skechers Go Walk 6,Sneakers,150,60,Footlocker,25,10,70,Skechers,5,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,SAFE,15,50
+SNE-053,ASICS Gel-Venture 8,Sneakers,80,70,SportsPro,30,6,42,ASICS,7,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,MEDIUM,13,60
+SNE-054,Under Armour Charged Assert,Sneakers,90,75,SportsPro,30,7,49,Under Armour,7,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,MEDIUM,13,60
+SNE-055,Nike Tanjun Running Shoes,Sneakers,170,70,Footlocker,25,9,63,Nike,5,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,SAFE,19,50
+SNE-056,Adidas Lite Racer Adapt,Sneakers,145,65,Footlocker,25,10,70,Adidas,5,Parth's Depot,https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400&q=80,SAFE,15,50
+SNE-057,Air Jordan 1 Mid,Sneakers,15,125,Footlocker,40,8,56,Nike,10,Parth's Depot,https://images.unsplash.com/photo-1556906781-9a412961c28c?w=400&q=80,HIGH RISK,2,80
+SNE-058,Air Jordan 4 Retro,Sneakers,10,190,Footlocker,40,6,42,Nike,14,Parth's Depot,https://images.unsplash.com/photo-1556906781-9a412961c28c?w=400&q=80,HIGH RISK,2,80
+SNE-059,Adidas Yeezy Slide,Sneakers,18,70,Footlocker,40,7,49,Adidas,10,Parth's Depot,https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=400&q=80,HIGH RISK,3,80
+SNE-060,Crocs Classic Clog,Sneakers,200,45,FashionFirst,20,12,84,Crocs,3,Parth's Depot,https://images.unsplash.com/photo-1506152983158-b4a74a01c721?w=400&q=80,SAFE,17,40
+ACC-061,JanSport SuperBreak Backpack,Accessories,140,45,UrbanWear,30,9,63,JanSport,5,Abhay's Depot,https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80,SAFE,16,60
+ACC-062,Herschel Classic Backpack,Accessories,85,70,UrbanWear,30,7,49,Herschel,7,Abhay's Depot,https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80,MEDIUM,12,60
+ACC-063,Fossil Leather Bifold Wallet,Accessories,110,48,LuxAccessories,30,8,56,Fossil,7,Abhay's Depot,https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&q=80,SAFE,14,60
+ACC-064,Timex Weekender 38mm Leather Strap Quartz Watch,Accessories,95,42,FashionFirst,30,7,49,Timex,7,Abhay's Depot,https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80,MEDIUM,14,60
+ACC-065,Casio F-91W Digital Watch,Accessories,150,35,FashionFirst,25,10,70,Casio,5,Abhay's Depot,https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80,SAFE,15,50
+ACC-066,Ray-Ban Wayfarer Sunglasses,Accessories,12,154,LuxAccessories,40,5,35,Ray-Ban,10,Abhay's Depot,https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&q=80,HIGH RISK,3,80
+ACC-067,Oakley Frogskins Sunglasses,Accessories,45,120,LuxAccessories,35,4,28,Oakley,10,Abhay's Depot,https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&q=80,MEDIUM,11,70
+ACC-068,Yeti Rambler 30oz Tumbler,Accessories,180,35,OutdoorGear,25,11,77,Yeti,5,Abhay's Depot,https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80,SAFE,16,50
+ACC-069,Hydro Flask 32oz Wide Mouth,Accessories,140,42,OutdoorGear,30,9,63,Hydro Flask,5,Abhay's Depot,https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80,SAFE,16,60
+ACC-070,Stanley Classic Thermos,Accessories,120,32,OutdoorGear,30,8,56,Stanley,7,Abhay's Depot,https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80,SAFE,15,60
+ACC-071,Contigo Autoseal Travel Mug,Accessories,200,22,HomeEssentials,20,12,84,Contigo,3,Abhay's Depot,https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80,SAFE,17,40
+ACC-072,"Samsonite Winfield 2 Hardside 28"" Checked Luggage",Accessories,35,189,TravelGear,35,3,21,Samsonite,14,Abhay's Depot,https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=400&q=80,MEDIUM,12,70
+ACC-073,"American Tourister Fieldbrook XLT 21"" Softside Carry-On",Accessories,55,129,TravelGear,35,4,28,American Tourister,10,Abhay's Depot,https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=400&q=80,MEDIUM,14,70
+ACC-074,Timbuk2 Classic Messenger Bag,Accessories,75,89,UrbanWear,30,6,42,Timbuk2,7,Abhay's Depot,https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80,MEDIUM,13,60
+ACC-075,Fjällräven Kånken Backpack,Accessories,18,80,OutdoorGear,40,5,35,Fjällräven,10,Abhay's Depot,https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80,HIGH RISK,4,80
+ACC-076,Osprey Daylite Plus Backpack,Accessories,65,65,OutdoorGear,35,6,42,Osprey,10,Abhay's Depot,https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80,MEDIUM,11,70
+ACC-077,Bellroy Slim Sleeve Wallet,Accessories,90,79,LuxAccessories,30,7,49,Bellroy,7,Abhay's Depot,https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&q=80,MEDIUM,13,60
+ACC-078,Ridge Carbon Fiber Wallet,Accessories,70,95,LuxAccessories,30,6,42,Ridge,7,Abhay's Depot,https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&q=80,MEDIUM,12,60
+ACC-079,Tile Mate Bluetooth Tracker,Accessories,190,25,TechSource,25,11,77,Tile,3,Abhay's Depot,https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=400&q=80,SAFE,17,50
+ACC-080,Apple AirTag 4-Pack,Accessories,15,99,TechSource,40,7,49,Apple,7,Abhay's Depot,https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=400&q=80,HIGH RISK,3,80
+ELE-081,Roku Streaming Stick 4K,Electronics,110,49,TechSource,30,8,56,Roku,5,Animesh's Depot,https://images.unsplash.com/photo-1593784991095-a205069470b6?w=400&q=80,SAFE,14,60
+ELE-082,Amazon Fire TV Stick 4K,Electronics,180,39,TechSource,25,12,84,Amazon,3,Animesh's Depot,https://images.unsplash.com/photo-1593784991095-a205069470b6?w=400&q=80,SAFE,15,50
+ELE-083,Google Chromecast with TV,Electronics,150,29,TechSource,25,11,77,Google,3,Animesh's Depot,https://images.unsplash.com/photo-1593784991095-a205069470b6?w=400&q=80,SAFE,14,50
+ELE-084,Philips Hue White 2-Pack,Electronics,85,49,HomeEssentials,30,7,49,Philips,7,Animesh's Depot,https://images.unsplash.com/photo-1558089687-e5c0c9fc4d0c?w=400&q=80,MEDIUM,12,60
+ELE-085,TP-Link Kasa Smart Plug 4-Pack,Electronics,120,24,HomeEssentials,30,10,70,TP-Link,5,Animesh's Depot,https://images.unsplash.com/photo-1558002038-1055907df827?w=400&q=80,SAFE,12,60
+ELE-086,Wyze Cam v3 Security Camera,Electronics,95,35,HomeEssentials,30,8,56,Wyze,7,Animesh's Depot,https://images.unsplash.com/photo-1558002038-1055907df827?w=400&q=80,MEDIUM,12,60
+ELE-087,Ring Video Doorbell Wired,Electronics,12,99,HomeEssentials,40,6,42,Ring,10,Animesh's Depot,https://images.unsplash.com/photo-1558002038-1055907df827?w=400&q=80,HIGH RISK,2,80
+ELE-088,Google Nest Mini Speaker,Electronics,140,49,TechSource,30,9,63,Google,5,Animesh's Depot,https://images.unsplash.com/photo-1543512214-318c7553f230?w=400&q=80,SAFE,16,60
+ELE-089,Amazon Echo Dot 5th Gen,Electronics,170,49,TechSource,25,10,70,Amazon,3,Animesh's Depot,https://images.unsplash.com/photo-1543512214-318c7553f230?w=400&q=80,SAFE,17,50
+ELE-090,JBL Flip 5 Portable Speaker,Electronics,80,119,AudioPro,30,7,49,JBL,7,Animesh's Depot,https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80,MEDIUM,11,60
+APP-091,Nike Dri-FIT Training Tee,Apparel,130,28,ActiveWear,30,10,70,Nike,5,Aayush's Depot,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80,SAFE,13,60
+APP-092,Adidas Tiro 21 Track Pants,Apparel,95,45,ActiveWear,30,7,49,Adidas,7,Aayush's Depot,https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&q=80,MEDIUM,14,60
+APP-093,Under Armour HeatGear Shirt,Apparel,110,35,ActiveWear,30,8,56,Under Armour,5,Aayush's Depot,https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&q=80,SAFE,14,60
+APP-094,Puma Essential Training Shorts,Apparel,140,32,ActiveWear,30,9,63,Puma,5,Aayush's Depot,https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&q=80,SAFE,16,60
+APP-095,Reebok Workout Ready Sports Bra,Apparel,100,38,ActiveWear,30,7,49,Reebok,7,Aayush's Depot,https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&q=80,SAFE,14,60
+APP-096,Lululemon Align High-Rise Leggings,Apparel,16,98,ActiveWear,40,8,56,Lululemon,10,Aayush's Depot,https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&q=80,HIGH RISK,2,80
+APP-097,Champion Performance Socks 6-Pack,Apparel,180,16,ActiveWear,25,13,91,Champion,3,Aayush's Depot,https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=400&q=80,SAFE,14,50
+APP-098,Nike Swoosh Headband 2-Pack,Apparel,200,12,ActiveWear,20,15,105,Nike,3,Aayush's Depot,https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&q=80,SAFE,13,40
+APP-099,Adidas Originals Trefoil Cap,Apparel,150,22,ActiveWear,25,11,77,Adidas,5,Aayush's Depot,https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&q=80,SAFE,14,50
+APP-100,Under Armour Undeniable Duffel,Apparel,75,48,ActiveWear,30,6,42,Under Armour,7,Aayush's Depot,https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80,MEDIUM,13,60
+ELE-101,"Apple MacBook Air M2 13"" 256GB Laptop",Electronics,18,1099,TechSource,40,3,21,Apple,14,Animesh's Depot,https://images.unsplash.com/photo-1611186871525-fdc89f22f5c5?w=400&q=80,HIGH RISK,6,80
+ELE-102,"Lenovo IdeaPad 3 15"" Intel i5 8GB 512GB Laptop",Electronics,25,549,TechSource,35,4,28,Lenovo,10,Animesh's Depot,https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&q=80,MEDIUM,6,70
+ELE-103,"HP Pavilion 15.6"" AMD Ryzen 5 8GB 256GB Laptop",Electronics,30,479,TechSource,35,4,28,HP,10,Animesh's Depot,https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&q=80,MEDIUM,7,70
+ELE-104,"ASUS VivoBook 14"" Intel i3 4GB 128GB Laptop",Electronics,40,349,TechSource,30,5,35,ASUS,10,Animesh's Depot,https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&q=80,SAFE,8,60
+ELE-105,Dell Inspiron 15 3000 Intel i5 8GB 512GB Laptop,Electronics,22,599,TechSource,35,4,28,Dell,10,Animesh's Depot,https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&q=80,MEDIUM,5,70
+ELE-106,Anker 6ft USB-C to USB-C Braided Cable,Electronics,200,13,TechSource,25,20,140,Anker,3,Animesh's Depot,https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400&q=80,SAFE,10,40
+ELE-107,Apple 20W USB-C Fast Charger Adapter,Electronics,150,19,TechSource,30,15,105,Apple,5,Animesh's Depot,https://images.unsplash.com/photo-1601999009834-f776abe1c5f4?w=400&q=80,SAFE,10,50
+ELE-108,Anker 65W GaN USB-C Wall Charger,Electronics,120,35,TechSource,30,12,84,Anker,5,Animesh's Depot,https://images.unsplash.com/photo-1601999009834-f776abe1c5f4?w=400&q=80,SAFE,10,60
+ELE-109,Belkin 10ft Lightning to USB-A Cable MFi,Electronics,180,22,TechSource,25,14,98,Belkin,3,Animesh's Depot,https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80,SAFE,12,50
+ELE-110,Anker 15W Qi2 Wireless Charging Pad,Electronics,95,28,TechSource,30,10,70,Anker,5,Animesh's Depot,https://images.unsplash.com/photo-1622973536968-3ead9e780960?w=400&q=80,SAFE,9,60
+ELE-111,Spigen Ultra Hybrid iPhone 15 Case Clear,Electronics,140,14,TechSource,30,12,84,Spigen,5,Animesh's Depot,https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&q=80,SAFE,11,60
+ELE-112,OtterBox Defender Series iPhone 15 Pro Case,Electronics,90,49,TechSource,30,8,56,OtterBox,7,Animesh's Depot,https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&q=80,SAFE,11,60
+ELE-113,amFilm Tempered Glass Screen Protector 3-Pack,Electronics,200,9,TechSource,20,18,126,amFilm,3,Animesh's Depot,https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80,SAFE,11,40
+ELE-114,Sony WH-1000XM5 Noise Cancelling Headphones,Electronics,20,349,AudioPro,40,5,35,Sony,10,Animesh's Depot,https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80,MEDIUM,4,80
+ELE-115,Bose QuietComfort 45 Wireless Headphones,Electronics,15,279,AudioPro,40,4,28,Bose,10,Animesh's Depot,https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80,HIGH RISK,3,80
+ELE-116,Apple AirPods Pro 2nd Gen with MagSafe Case,Electronics,12,249,TechSource,40,6,42,Apple,7,Animesh's Depot,https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=400&q=80,HIGH RISK,2,80
+ELE-117,Samsung Galaxy Buds2 Pro True Wireless Earbuds,Electronics,35,179,TechSource,35,6,42,Samsung,7,Animesh's Depot,https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&q=80,SAFE,5,70
+APP-118,Levi's 511 Slim Fit Men's Stretch Jeans,Apparel,85,69,DenimWorld,30,8,56,Levi's,7,Aayush's Depot,https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80,SAFE,10,60
+APP-119,Calvin Klein Men's Modern Cotton Crew Neck Tee,Apparel,110,29,FashionFirst,30,9,63,Calvin Klein,5,Aayush's Depot,https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80,SAFE,12,60
+APP-120,Tommy Hilfiger Men's Classic Polo Shirt,Apparel,75,59,StyleHub,30,7,49,Tommy Hilfiger,7,Aayush's Depot,https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&q=80,SAFE,10,60
+APP-121,Ralph Lauren Men's Oxford Button-Down Shirt,Apparel,60,89,StyleHub,35,5,35,Ralph Lauren,10,Aayush's Depot,https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&q=80,SAFE,12,70
+APP-122,Nike Men's Club Fleece Pullover Hoodie,Apparel,95,55,ActiveWear,30,8,56,Nike,7,Aayush's Depot,https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&q=80,SAFE,11,60
+APP-123,Adidas Men's Essentials 3-Stripe Joggers,Apparel,110,40,ActiveWear,30,9,63,Adidas,5,Aayush's Depot,https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=400&q=80,SAFE,12,60
+APP-124,Zara Men's Slim Fit Chino Trousers,Apparel,70,49,FashionFirst,30,6,42,Zara,7,Aayush's Depot,https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&q=80,SAFE,11,60
+APP-125,H&M Men's Regular Fit Oxford Shirt,Apparel,130,24,FashionFirst,25,11,77,H&M,5,Aayush's Depot,https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&q=80,SAFE,11,50
+SNE-126,Nike Air Zoom Pegasus 40 Running Shoes,Sneakers,45,130,Footlocker,35,7,49,Nike,7,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,SAFE,6,70
+SNE-127,Adidas Ultraboost 22 Running Shoes,Sneakers,30,180,Footlocker,35,5,35,Adidas,10,Parth's Depot,https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=400&q=80,MEDIUM,6,70
+SNE-128,New Balance Fresh Foam 1080v12,Sneakers,25,159,SportsPro,35,4,28,New Balance,10,Parth's Depot,https://images.unsplash.com/photo-1539185441755-769473a23570?w=400&q=80,MEDIUM,6,70
+SNE-129,HOKA Clifton 9 Road Running Shoes,Sneakers,20,145,SportsPro,40,4,28,HOKA,10,Parth's Depot,https://images.unsplash.com/photo-1606890542085-6d6db2445892?w=400&q=80,MEDIUM,5,80
+SNE-130,Saucony Ride 16 Running Shoes,Sneakers,18,130,SportsPro,40,3,21,Saucony,10,Parth's Depot,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80,HIGH RISK,6,80
+ACC-131,Levi's Men's Braided Genuine Leather Belt,Accessories,120,28,FashionFirst,25,10,70,Levi's,5,Abhay's Depot,https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=400&q=80,SAFE,12,50
+ACC-132,Tommy Hilfiger Men's Casual Leather Belt,Accessories,90,39,StyleHub,30,8,56,Tommy Hilfiger,7,Abhay's Depot,https://images.unsplash.com/photo-1624222247344-550fb60583dc?w=400&q=80,SAFE,11,60
+ACC-133,Fossil Men's Townsman Chronograph Watch,Accessories,35,145,LuxAccessories,35,4,28,Fossil,10,Abhay's Depot,https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80,SAFE,8,70
+ACC-134,Ray-Ban Aviator Classic Gold Frame Sunglasses,Accessories,18,168,LuxAccessories,40,4,28,Ray-Ban,10,Abhay's Depot,https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&q=80,HIGH RISK,4,80
+ACC-135,"Briggs & Riley Rhapsody 21"" Carry-On Luggage",Accessories,15,449,TravelGear,40,2,14,Briggs & Riley,14,Abhay's Depot,https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=400&q=80,HIGH RISK,7,80
+ACC-136,Columbia Omni-Heat Fleece Neck Gaiter,Accessories,160,18,OutdoorGear,20,13,91,Columbia,3,Abhay's Depot,https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&q=80,SAFE,12,40
+ACC-137,The North Face Etip Recycled Gloves,Accessories,130,35,OutdoorGear,25,10,70,The North Face,5,Abhay's Depot,https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&q=80,SAFE,13,50
+ACC-138,Totes Auto-Open Close Folding Compact Umbrella,Accessories,175,22,HomeEssentials,20,14,98,Totes,3,Abhay's Depot,https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80,SAFE,12,40

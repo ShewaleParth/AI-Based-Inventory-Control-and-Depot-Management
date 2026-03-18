@@ -15,21 +15,38 @@ export const setAuthToken = (token) => {
 
 // Request interceptor to add JWT token
 nodeApi.interceptors.request.use((config) => {
-    const token = currentToken || localStorage.getItem('token');
+    // Access token lives in memory only (dual-token system — NOT localStorage)
+    const token = currentToken;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
 
-// Response interceptor to handle 401 errors
+// Response interceptor: on 401, trigger a silent refresh attempt via the auth context
+// If refresh fails, a hard redirect to /login would be triggered by the auth context itself.
 nodeApi.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+    async (error) => {
+        // Don't loop on refresh endpoint itself
+        if (error.response?.status === 401 && !error.config._retry) {
+            error.config._retry = true;
+            try {
+                // Attempt silent token refresh
+                const refreshResponse = await axios.post('/api/v1/auth/refresh', {}, { withCredentials: true });
+                const { token: newToken } = refreshResponse.data;
+                // Update in-memory token
+                currentToken = newToken;
+                // Retry original request with new token
+                error.config.headers.Authorization = `Bearer ${newToken}`;
+                return nodeApi(error.config);
+            } catch {
+                // Refresh failed — clear state and redirect to login
+                currentToken = null;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }

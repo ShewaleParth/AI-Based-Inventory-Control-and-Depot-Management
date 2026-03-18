@@ -282,6 +282,23 @@ router.post('/transfer', requirePermission('transfers:create'), async (req, res,
   try {
     const { productId, quantity, fromDepotId, toDepotId, reason, notes } = req.body;
 
+    // Validate all required fields before any DB access
+    if (!productId) {
+      return res.status(400).json({ message: 'Product is required for transfer' });
+    }
+    if (!quantity || parseInt(quantity) <= 0) {
+      return res.status(400).json({ message: 'A positive quantity is required for transfer' });
+    }
+    if (!fromDepotId) {
+      return res.status(400).json({ message: 'Source depot (fromDepotId) is required' });
+    }
+    if (!toDepotId) {
+      return res.status(400).json({ message: 'Destination depot (toDepotId) is required' });
+    }
+    if (fromDepotId === toDepotId) {
+      return res.status(400).json({ message: 'Source and destination depots must be different' });
+    }
+
     // Check write access for source depot (must have transfer permission)
     const accessCheck = await checkDepotWriteAccess(req.userId, req.userRole, fromDepotId, req.organizationId);
     if (!accessCheck.allowed) {

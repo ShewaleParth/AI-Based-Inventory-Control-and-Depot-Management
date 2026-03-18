@@ -31,10 +31,38 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess, init
     }, [isOpen, initialTab, initialQuantity]);
 
     useEffect(() => {
-        if (isOpen && depots.length > 0 && !formData.depotId) {
-            setFormData(prev => ({ ...prev, depotId: depots[0]._id || depots[0].id }));
-        }
-    }, [isOpen, depots]);
+        if (!isOpen || !product) return;
+
+        // Build a lookup of which depots have stock for this product
+        const distMap = {};
+        (product.depotDistribution || []).forEach(d => {
+            distMap[d.depotId?.toString()] = d.quantity || 0;
+        });
+
+        // Auto-select first depot for stock-in / stock-out
+        const firstDepotId = depots.length > 0 ? (depots[0]._id || depots[0].id) : '';
+
+        // For transfer: pick the first depot that actually has stock
+        const depotsWithStock = depots.filter(d =>
+            (distMap[(d._id || d.id)?.toString()] || 0) > 0
+        );
+        const autoFromDepotId = depotsWithStock.length > 0
+            ? (depotsWithStock[0]._id || depotsWithStock[0].id)
+            : (firstDepotId);
+
+        // Pick a different depot for "to"
+        const autoToDepot = depots.find(d =>
+            (d._id || d.id)?.toString() !== autoFromDepotId?.toString()
+        );
+        const autoToDepotId = autoToDepot ? (autoToDepot._id || autoToDepot.id) : '';
+
+        setFormData(prev => ({
+            ...prev,
+            depotId: prev.depotId || firstDepotId,
+            fromDepotId: prev.fromDepotId || autoFromDepotId || '',
+            toDepotId: prev.toDepotId || autoToDepotId || '',
+        }));
+    }, [isOpen, depots, product]);
 
     const calculatePreview = () => {
         const qty = parseInt(formData.quantity) || 0;
@@ -249,11 +277,18 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess, init
                                 value={formData.depotId}
                                 onChange={(e) => setFormData({ ...formData, depotId: e.target.value })}
                             >
-                                {depots.map(d => (
-                                    <option key={d._id || d.id} value={d._id || d.id}>
-                                        {d.name} ({d.location})
-                                    </option>
-                                ))}
+                                {depots.map(d => {
+                                    const depotId = d._id || d.id;
+                                    const distEntry = product?.depotDistribution?.find(
+                                        dd => dd.depotId?.toString() === depotId?.toString()
+                                    );
+                                    const stockInDepot = distEntry?.quantity || 0;
+                                    return (
+                                        <option key={depotId} value={depotId}>
+                                            {d.name} — {stockInDepot} units currently
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
                     )}
@@ -266,11 +301,18 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess, init
                                 value={formData.depotId}
                                 onChange={(e) => setFormData({ ...formData, depotId: e.target.value })}
                             >
-                                {depots.map(d => (
-                                    <option key={d._id || d.id} value={d._id || d.id}>
-                                        {d.name} ({d.location})
-                                    </option>
-                                ))}
+                                {depots.map(d => {
+                                    const depotId = d._id || d.id;
+                                    const distEntry = product?.depotDistribution?.find(
+                                        dd => dd.depotId?.toString() === depotId?.toString()
+                                    );
+                                    const stockInDepot = distEntry?.quantity || 0;
+                                    return (
+                                        <option key={depotId} value={depotId} disabled={stockInDepot === 0}>
+                                            {d.name} — {stockInDepot} units available{stockInDepot === 0 ? ' (empty)' : ''}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
                     )}
@@ -285,26 +327,46 @@ const AddTransactionModal = ({ isOpen, onClose, product, depots, onSuccess, init
                                     onChange={(e) => setFormData({ ...formData, fromDepotId: e.target.value })}
                                 >
                                     <option value="">Select source depot</option>
-                                    {depots.map(d => (
-                                        <option key={d._id || d.id} value={d._id || d.id}>
-                                            {d.name} ({d.location})
-                                        </option>
-                                    ))}
+                                    {depots
+                                        .filter(d => (d._id || d.id)?.toString() !== formData.toDepotId?.toString())
+                                        .map(d => {
+                                            const depotId = d._id || d.id;
+                                            const distEntry = product?.depotDistribution?.find(
+                                                dd => dd.depotId?.toString() === depotId?.toString()
+                                            );
+                                            const stockInDepot = distEntry?.quantity || 0;
+                                            return (
+                                                <option key={depotId} value={depotId} disabled={stockInDepot === 0}>
+                                                    {d.name} — {stockInDepot} units available{stockInDepot === 0 ? ' (empty)' : ''}
+                                                </option>
+                                            );
+                                        })
+                                    }
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label>To Depot *</label>
+                                <label>To Depot (Destination) *</label>
                                 <select
                                     required
                                     value={formData.toDepotId}
                                     onChange={(e) => setFormData({ ...formData, toDepotId: e.target.value })}
                                 >
                                     <option value="">Select destination depot</option>
-                                    {depots.map(d => (
-                                        <option key={d._id || d.id} value={d._id || d.id}>
-                                            {d.name} ({d.location})
-                                        </option>
-                                    ))}
+                                    {depots
+                                        .filter(d => (d._id || d.id)?.toString() !== formData.fromDepotId?.toString())
+                                        .map(d => {
+                                            const depotId = d._id || d.id;
+                                            const distEntry = product?.depotDistribution?.find(
+                                                dd => dd.depotId?.toString() === depotId?.toString()
+                                            );
+                                            const stockInDepot = distEntry?.quantity || 0;
+                                            return (
+                                                <option key={depotId} value={depotId}>
+                                                    {d.name} — {stockInDepot} units currently
+                                                </option>
+                                            );
+                                        })
+                                    }
                                 </select>
                             </div>
                         </>

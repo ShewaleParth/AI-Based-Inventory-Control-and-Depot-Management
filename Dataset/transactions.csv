@@ -1,0 +1,232 @@
+Date,Type,Product,SKU,Quantity,From,To,Reason,Performed By
+2026-03-16 18:00,Stock In,Apple AirPods Pro 2nd Gen with MagSafe Case,ELE-116,89,"TechSource Warehouse, Andheri East",Animesh's Depot,Back-order fulfilled by supplier,Suresh Patil
+2026-03-15 18:45,Return,Crocs Classic Clog,SNE-060,5,Online Customer Return,Parth's Depot,Wrong item shipped – returned,Arjun Desai
+2026-03-15 18:00,Stock In,"Briggs & Riley Rhapsody 21"" Carry-On Luggage",ACC-135,92,"TravelGear Central, BKC",Abhay's Depot,Supplier advance shipment,Rahul Verma
+2026-03-15 15:45,Stock In,Drew House Sweatshirt,APP-021,94,"StyleHub Distribution, Bandra",Aayush's Depot,Return from customer – restocked,Aayush Gupta
+2026-03-15 12:45,Return,New Balance Fresh Foam 1080v12,SNE-128,2,Online Customer Return,Parth's Depot,Damaged in transit – returned to supplier,Parth Shewale
+2026-03-15 12:30,Stock Out,Bellroy Slim Sleeve Wallet,ACC-077,22,Abhay's Depot,Retail Store – Mumbai,Same-day delivery order,Rahul Verma
+2026-03-15 08:00,Stock Out,Anker 6ft USB-C to USB-C Braided Cable,ELE-106,51,Animesh's Depot,Walk-in Customer,Export consignment dispatched,Rohan Mehta
+2026-03-14 16:45,Stock In,Eddie Bauer Men's CirrusLite Down Jacket,APP-034,105,"OutdoorGear Hub, Powai",Aayush's Depot,Return from customer – restocked,Kavya Reddy
+2026-03-14 13:45,Stock Out,amFilm Tempered Glass Screen Protector 3-Pack,ELE-113,44,Animesh's Depot,Export – GCC Region,Export consignment dispatched,Animesh Sharma
+2026-03-14 11:15,Stock In,NVIDIA GeForce RTX 4070 12GB GDDR6X,ELE-002,98,"TechSource Warehouse, Andheri East",Animesh's Depot,Seasonal stock buildup,Animesh Sharma
+2026-03-14 09:00,Stock Out,Ralph Lauren Men's Oxford Button-Down Shirt,APP-121,10,Aayush's Depot,Corporate Order – Infosys,Export consignment dispatched,Aayush Gupta
+2026-03-13 18:30,Stock In,Razer BlackWidow Keyboard,ELE-011,28,"TechSource Warehouse, Andheri East",Animesh's Depot,Supplier advance shipment,Suresh Patil
+2026-03-13 18:30,Stock In,Lululemon Align High-Rise Leggings,APP-096,101,"ActiveWear Hub, Goregaon",Aayush's Depot,Supplier advance shipment,Aayush Gupta
+2026-03-13 14:30,Stock In,ASICS Gel-Venture 8,SNE-053,21,"SportsPro Warehouse, Worli",Parth's Depot,Back-order fulfilled by supplier,Arjun Desai
+2026-03-13 10:15,Return,HOKA Clifton 9 Road Running Shoes,SNE-129,1,Online Customer Return,Parth's Depot,Customer return – changed mind,Sneha Joshi
+2026-03-13 09:15,Stock In,"Samsonite Winfield 2 Hardside 28"" Checked Luggage",ACC-072,19,"TravelGear Central, BKC",Abhay's Depot,Bulk purchase order fulfilled,Pooja Kulkarni
+2026-03-12 18:45,Stock In,Air Jordan 4 Retro,SNE-058,81,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Reorder point triggered – auto purchase,Sneha Joshi
+2026-03-12 10:45,Adjustment,Dell Inspiron 15 3000 Intel i5 8GB 512GB Laptop,ELE-105,-4,Animesh's Depot,Animesh's Depot,Cycle count correction,Suresh Patil
+2026-03-12 09:15,Stock In,"Apple MacBook Air M2 13"" 256GB Laptop",ELE-101,90,"TechSource Warehouse, Andheri East",Animesh's Depot,Seasonal stock buildup,Rohan Mehta
+2026-03-12 08:45,Return,Spigen Ultra Hybrid iPhone 15 Case Clear,ELE-111,6,B2B Client Return,Animesh's Depot,Customer return – wrong size,Suresh Patil
+2026-03-12 08:15,Stock In,Nintendo Ring Fit Adventure,ELE-019,102,"GameWorld Supply, Thane",Animesh's Depot,Reorder point triggered – auto purchase,Suresh Patil
+2026-03-11 18:30,Stock In,Ring Video Doorbell Wired,ELE-087,89,"HomeEssentials Hub, Navi Mumbai",Animesh's Depot,Scheduled reorder from supplier,Animesh Sharma
+2026-03-11 18:00,Return,Adidas Tiro 21 Track Pants,APP-092,1,B2B Client Return,Aayush's Depot,Customer return – not as described,Kavya Reddy
+2026-03-11 17:15,Stock In,The North Face Borealis Backpack,APP-032,16,"OutdoorGear Hub, Powai",Aayush's Depot,Reorder point triggered – auto purchase,Priya Nair
+2026-03-11 15:00,Stock Out,Elgato Stream Deck,ELE-013,16,Animesh's Depot,Walk-in Customer,Bulk B2B order dispatched,Suresh Patil
+2026-03-11 14:00,Stock In,Blue Yeti USB Microphone,ELE-010,87,"AudioPro Distribution Hub, Kurla",Animesh's Depot,Seasonal stock buildup,Suresh Patil
+2026-03-11 12:00,Stock In,GoPro HERO 11 Black,ELE-001,99,"TechSource Warehouse, Andheri East",Animesh's Depot,Bulk purchase order fulfilled,Rohan Mehta
+2026-03-11 11:00,Stock Out,The North Face Borealis Backpack,APP-032,9,Aayush's Depot,Retail Store – Mumbai,Bulk B2B order dispatched,Kavya Reddy
+2026-03-11 10:00,Return,Uniqlo Heattech Long Sleeve,APP-035,6,Aayush's Depot,"FashionFirst Central, Dadar",Supplier recall – quality issue,Kavya Reddy
+2026-03-10 17:30,Stock In,Old Navy Cargo Shorts,APP-038,58,"FashionFirst Central, Dadar",Aayush's Depot,Emergency restock – low inventory,Kavya Reddy
+2026-03-10 14:30,Transfer,Wrangler Cowboy Cut Jeans,APP-028,34,Aayush's Depot,Parth's Depot,Surplus stock redistribution,Kavya Reddy
+2026-03-10 11:00,Stock In,Levi's 505 Regular Fit Jeans,APP-030,106,"DenimWorld Warehouse, Malad",Aayush's Depot,Return from customer – restocked,Priya Nair
+2026-03-09 17:45,Return,Anker 65W GaN USB-C Wall Charger,ELE-108,6,B2B Client Return,Animesh's Depot,Damaged in transit – returned to supplier,Animesh Sharma
+2026-03-09 15:15,Stock Out,Drew House Sweatshirt,APP-021,17,Aayush's Depot,Export – GCC Region,Subscription order shipped,Kavya Reddy
+2026-03-09 08:00,Stock In,Air Jordan 1 Mid,SNE-057,92,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Supplier advance shipment,Sneha Joshi
+2026-03-08 18:45,Stock Out,GoPro HERO 11 Black,ELE-001,11,Animesh's Depot,Export – GCC Region,Customer order fulfilled – online,Rohan Mehta
+2026-03-08 17:00,Stock Out,Blue Yeti USB Microphone,ELE-010,15,Animesh's Depot,Walk-in Customer,Subscription order shipped,Animesh Sharma
+2026-03-08 15:15,Stock Out,Microsoft Xbox Controller,ELE-018,30,Animesh's Depot,Retail Store – Mumbai,Export consignment dispatched,Animesh Sharma
+2026-03-08 11:30,Stock In,Nike Air Force 1 White,SNE-043,102,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Back-order fulfilled by supplier,Arjun Desai
+2026-03-08 10:15,Stock Out,Uniqlo Heattech Long Sleeve,APP-035,30,Aayush's Depot,Online Customer – Delivery,Bulk B2B order dispatched,Priya Nair
+2026-03-08 08:45,Stock In,Saucony Ride 16 Running Shoes,SNE-130,102,"SportsPro Warehouse, Worli",Parth's Depot,Emergency restock – low inventory,Arjun Desai
+2026-03-08 08:30,Stock Out,Roku Streaming Stick 4K,ELE-081,17,Animesh's Depot,Retail Store – Mumbai,Same-day delivery order,Suresh Patil
+2026-03-07 13:45,Stock In,Anker 6ft USB-C to USB-C Braided Cable,ELE-106,116,"TechSource Warehouse, Andheri East",Animesh's Depot,Seasonal stock buildup,Rohan Mehta
+2026-03-07 13:15,Transfer,"Apple MacBook Air M2 13"" 256GB Laptop",ELE-101,10,Animesh's Depot,Parth's Depot,Surplus stock redistribution,Animesh Sharma
+2026-03-07 12:45,Stock In,Ray-Ban Aviator Classic Gold Frame Sunglasses,ACC-134,95,"LuxAccessories Pvt, Fort",Abhay's Depot,Bulk purchase order fulfilled,Pooja Kulkarni
+2026-03-05 11:15,Stock In,Adidas Yeezy Slide,SNE-059,106,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Seasonal stock buildup,Sneha Joshi
+2026-03-05 10:30,Transfer,TP-Link Archer AC1750 Dual Band WiFi Router,ELE-007,23,Animesh's Depot,Parth's Depot,High demand at destination depot,Animesh Sharma
+2026-03-04 17:45,Stock Out,Lee Regular Fit Jeans,APP-029,18,Aayush's Depot,B2B Client – Flipkart,Flash sale order fulfilled,Priya Nair
+2026-03-04 15:00,Stock In,Elgato Stream Deck,ELE-013,90,"TechSource Warehouse, Andheri East",Animesh's Depot,Seasonal stock buildup,Suresh Patil
+2026-03-04 12:30,Stock Out,Yeti Rambler 30oz Tumbler,ACC-068,37,Abhay's Depot,Export – GCC Region,Subscription order shipped,Rahul Verma
+2026-03-04 12:15,Stock In,Adidas Stan Smith,SNE-044,21,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Bulk purchase order fulfilled,Sneha Joshi
+2026-03-04 12:00,Return,Levi's 505 Regular Fit Jeans,APP-030,3,Aayush's Depot,"DenimWorld Warehouse, Malad",Customer return – changed mind,Priya Nair
+2026-03-04 10:45,Stock Out,Google Nest Mini Speaker,ELE-088,36,Animesh's Depot,Retail Store – Pune,Flash sale order fulfilled,Suresh Patil
+2026-03-04 09:30,Stock In,Fjällräven Kånken Backpack,ACC-075,90,"OutdoorGear Hub, Powai",Abhay's Depot,Bulk purchase order fulfilled,Rahul Verma
+2026-03-04 08:15,Stock Out,Corsair Vengeance LPX 16GB DDR4 3200MHz RAM,ELE-006,22,Animesh's Depot,Retail Store – Mumbai,Festival sale order fulfilled,Animesh Sharma
+2026-03-03 18:45,Transfer,Nike Tanjun Running Shoes,SNE-055,34,Parth's Depot,Aayush's Depot,Surplus stock redistribution,Arjun Desai
+2026-03-03 13:30,Return,Air Jordan 4 Retro,SNE-058,2,Parth's Depot,"Footlocker Regional Depot, Lower Parel",Customer return – changed mind,Arjun Desai
+2026-03-03 10:15,Stock Out,Under Armour Charged Assert,SNE-054,19,Parth's Depot,B2B Client – Amazon FBA,Subscription order shipped,Sneha Joshi
+2026-03-03 08:15,Stock In,Ray-Ban Wayfarer Sunglasses,ACC-066,83,"LuxAccessories Pvt, Fort",Abhay's Depot,Supplier advance shipment,Abhay Singh
+2026-03-02 18:30,Stock In,Bose QuietComfort 45 Wireless Headphones,ELE-115,107,"AudioPro Distribution Hub, Kurla",Animesh's Depot,Back-order fulfilled by supplier,Suresh Patil
+2026-03-02 17:30,Transfer,Stanley Classic Thermos,ACC-070,36,Abhay's Depot,Animesh's Depot,Emergency stock transfer – critical level,Pooja Kulkarni
+2026-03-02 12:45,Transfer,OtterBox Defender Series iPhone 15 Pro Case,ELE-112,25,Animesh's Depot,Aayush's Depot,High demand at destination depot,Suresh Patil
+2026-03-02 09:30,Stock In,Apple AirTag 4-Pack,ACC-080,84,"TechSource Warehouse, Andheri East",Abhay's Depot,Back-order fulfilled by supplier,Abhay Singh
+2026-03-01 15:00,Stock Out,OtterBox Defender Series iPhone 15 Pro Case,ELE-112,30,Animesh's Depot,B2B Client – Flipkart,Subscription order shipped,Rohan Mehta
+2026-03-01 08:00,Stock Out,Adidas Yeezy Slide,SNE-059,20,Parth's Depot,Retail Store – Pune,Export consignment dispatched,Sneha Joshi
+2026-02-28 18:00,Transfer,Casio F-91W Digital Watch,ACC-065,49,Abhay's Depot,Aayush's Depot,High demand at destination depot,Abhay Singh
+2026-02-28 15:15,Return,Western Digital My Book 4TB USB 3.0 Desktop HDD,ELE-014,3,Online Customer Return,Animesh's Depot,Customer return – changed mind,Animesh Sharma
+2026-02-28 11:15,Stock In,Seagate Expansion 2TB USB 3.0 External HDD,ELE-008,54,"TechSource Warehouse, Andheri East",Animesh's Depot,Scheduled reorder from supplier,Suresh Patil
+2026-02-26 17:45,Return,Nike Dri-FIT Training Tee,APP-091,4,Aayush's Depot,"ActiveWear Hub, Goregaon",Customer return – defective unit,Kavya Reddy
+2026-02-26 16:15,Stock Out,Eddie Bauer Men's CirrusLite Down Jacket,APP-034,8,Aayush's Depot,B2B Client – Flipkart,Subscription order shipped,Kavya Reddy
+2026-02-26 13:30,Transfer,The North Face Etip Recycled Gloves,ACC-137,37,Abhay's Depot,Animesh's Depot,Inventory balancing between depots,Abhay Singh
+2026-02-26 09:30,Return,Nike Air Force 1 White,SNE-043,1,Courier Hub – Damaged Return,Parth's Depot,Customer return – defective unit,Parth Shewale
+2026-02-25 16:00,Stock Out,Ralph Lauren Men's Oxford Button-Down Shirt,APP-121,14,Aayush's Depot,B2B Client – Amazon FBA,Subscription order shipped,Priya Nair
+2026-02-25 12:45,Transfer,Fruit of the Loom 5-Pack Tees,APP-024,53,Aayush's Depot,Parth's Depot,Seasonal demand shift,Priya Nair
+2026-02-25 08:30,Stock In,Nike Men's Club Fleece Pullover Hoodie,APP-122,32,"ActiveWear Hub, Goregaon",Aayush's Depot,Supplier advance shipment,Kavya Reddy
+2026-02-24 15:00,Adjustment,Hydro Flask 32oz Wide Mouth,ACC-069,-6,Abhay's Depot,Abhay's Depot,Quality check failure – units removed,Pooja Kulkarni
+2026-02-22 17:45,Stock In,JanSport SuperBreak Backpack,ACC-061,57,"UrbanWear Depot, Vile Parle",Abhay's Depot,Supplier advance shipment,Pooja Kulkarni
+2026-02-22 14:30,Adjustment,Herschel Classic Backpack,ACC-062,1,Abhay's Depot,Abhay's Depot,Barcode scan error corrected,Pooja Kulkarni
+2026-02-22 13:45,Transfer,Hollister Graphic T-Shirt,APP-040,40,Aayush's Depot,Abhay's Depot,Depot capacity optimisation,Kavya Reddy
+2026-02-22 10:00,Transfer,Corsair Vengeance LPX 16GB DDR4 3200MHz RAM,ELE-006,26,Animesh's Depot,Aayush's Depot,Inter-depot rebalancing – weekly cycle,Animesh Sharma
+2026-02-21 17:00,Stock Out,Nike Men's Club Fleece Pullover Hoodie,APP-122,27,Aayush's Depot,Walk-in Customer,Subscription order shipped,Kavya Reddy
+2026-02-21 11:15,Stock Out,Google Nest Mini Speaker,ELE-088,22,Animesh's Depot,B2B Client – Flipkart,Customer order fulfilled – online,Animesh Sharma
+2026-02-21 10:00,Stock In,"American Tourister Fieldbrook XLT 21"" Softside Carry-On",ACC-073,16,"TravelGear Central, BKC",Abhay's Depot,Bulk purchase order fulfilled,Rahul Verma
+2026-02-20 18:45,Stock Out,Apple AirTag 4-Pack,ACC-080,25,Abhay's Depot,Retail Store – Mumbai,Subscription order shipped,Abhay Singh
+2026-02-20 16:15,Stock Out,Adidas Tiro 21 Track Pants,APP-092,22,Aayush's Depot,Online Customer – Delivery,Customer order fulfilled – online,Aayush Gupta
+2026-02-20 15:15,Stock In,Calvin Klein Men's Modern Cotton Crew Neck Tee,APP-119,63,"FashionFirst Central, Dadar",Aayush's Depot,Scheduled reorder from supplier,Priya Nair
+2026-02-20 15:00,Stock In,Nike Air Max 90,SNE-041,28,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Scheduled reorder from supplier,Parth Shewale
+2026-02-20 11:30,Transfer,Puma Cali Sport Sneakers,SNE-047,16,Parth's Depot,Animesh's Depot,Seasonal demand shift,Sneha Joshi
+2026-02-20 10:00,Transfer,Sony DualSense Controller,ELE-017,29,Animesh's Depot,Parth's Depot,Inventory balancing between depots,Suresh Patil
+2026-02-18 18:00,Stock Out,Ray-Ban Wayfarer Sunglasses,ACC-066,14,Abhay's Depot,Corporate Order – Infosys,Flash sale order fulfilled,Abhay Singh
+2026-02-17 17:45,Stock In,Skechers Go Walk 6,SNE-052,37,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Emergency restock – low inventory,Arjun Desai
+2026-02-15 13:45,Transfer,Columbia Omni-Heat Fleece Neck Gaiter,ACC-136,37,Abhay's Depot,Aayush's Depot,High demand at destination depot,Rahul Verma
+2026-02-15 10:15,Stock Out,Fruit of the Loom 5-Pack Tees,APP-024,31,Aayush's Depot,Online Customer – Delivery,Bulk B2B order dispatched,Priya Nair
+2026-02-15 09:15,Stock In,Tommy Hilfiger Men's Casual Leather Belt,ACC-132,50,"StyleHub Distribution, Bandra",Abhay's Depot,Bulk purchase order fulfilled,Abhay Singh
+2026-02-14 17:15,Return,Adidas Originals Trefoil Cap,APP-099,5,Aayush's Depot,"ActiveWear Hub, Goregaon",Customer return – wrong size,Aayush Gupta
+2026-02-14 09:45,Stock Out,Wyze Cam v3 Security Camera,ELE-086,30,Animesh's Depot,Corporate Order – Infosys,Customer order fulfilled – online,Suresh Patil
+2026-02-13 17:15,Stock In,Puma Essential Training Shorts,APP-094,41,"ActiveWear Hub, Goregaon",Aayush's Depot,Reorder point triggered – auto purchase,Kavya Reddy
+2026-02-13 16:00,Stock Out,Adidas Lite Racer Adapt,SNE-056,14,Parth's Depot,Retail Store – Pune,Festival sale order fulfilled,Arjun Desai
+2026-02-13 11:45,Adjustment,Air Jordan 1 Mid,SNE-057,-2,Parth's Depot,Parth's Depot,Cycle count correction,Sneha Joshi
+2026-02-13 08:30,Stock Out,Lululemon Align High-Rise Leggings,APP-096,10,Aayush's Depot,B2B Client – Amazon FBA,Same-day delivery order,Kavya Reddy
+2026-02-13 08:00,Stock Out,Tile Mate Bluetooth Tracker,ACC-079,21,Abhay's Depot,Online Customer – Delivery,Subscription order shipped,Abhay Singh
+2026-02-12 14:00,Adjustment,The North Face Etip Recycled Gloves,ACC-137,-4,Abhay's Depot,Abhay's Depot,Quality check failure – units removed,Abhay Singh
+2026-02-12 11:00,Stock Out,H&M Basic Cotton T-Shirt,APP-036,33,Aayush's Depot,Corporate Order – Infosys,Bulk B2B order dispatched,Aayush Gupta
+2026-02-12 11:00,Stock In,Nike Air Max 90,SNE-041,45,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Emergency restock – low inventory,Parth Shewale
+2026-02-11 18:15,Adjustment,Hanes ComfortBlend Hoodie,APP-023,-4,Aayush's Depot,Aayush's Depot,System sync reconciliation,Kavya Reddy
+2026-02-11 18:15,Stock In,Totes Auto-Open Close Folding Compact Umbrella,ACC-138,58,"HomeEssentials Hub, Navi Mumbai",Abhay's Depot,Scheduled reorder from supplier,Abhay Singh
+2026-02-11 16:15,Transfer,TP-Link Kasa Smart Plug 4-Pack,ELE-085,25,Animesh's Depot,Parth's Depot,High demand at destination depot,Animesh Sharma
+2026-02-11 14:15,Transfer,Columbia Men's Steens Mountain Full-Zip Fleece Jacket,APP-031,30,Aayush's Depot,Parth's Depot,Inventory balancing between depots,Priya Nair
+2026-02-11 09:00,Stock Out,Herschel Classic Backpack,ACC-062,22,Abhay's Depot,Export – GCC Region,Export consignment dispatched,Pooja Kulkarni
+2026-02-10 15:30,Stock In,Fossil Leather Bifold Wallet,ACC-063,56,"LuxAccessories Pvt, Fort",Abhay's Depot,Emergency restock – low inventory,Abhay Singh
+2026-02-09 15:00,Stock Out,Osprey Daylite Plus Backpack,ACC-076,19,Abhay's Depot,Retail Store – Mumbai,Subscription order shipped,Rahul Verma
+2026-02-09 14:15,Stock Out,Logitech C920 HD Webcam,ELE-004,28,Animesh's Depot,B2B Client – Amazon FBA,Subscription order shipped,Animesh Sharma
+2026-02-09 12:45,Return,New Balance 574 Core,SNE-049,2,Retail Store – Return,Parth's Depot,Customer return – defective unit,Parth Shewale
+2026-02-09 09:45,Stock Out,Eddie Bauer Men's CirrusLite Down Jacket,APP-034,9,Aayush's Depot,Online Customer – Delivery,Bulk B2B order dispatched,Kavya Reddy
+2026-02-09 08:15,Transfer,Timbuk2 Classic Messenger Bag,ACC-074,19,Abhay's Depot,Animesh's Depot,Inter-depot rebalancing – weekly cycle,Pooja Kulkarni
+2026-02-08 17:45,Stock Out,Philips Hue White 2-Pack,ELE-084,12,Animesh's Depot,Online Customer – Delivery,Same-day delivery order,Suresh Patil
+2026-02-08 17:00,Stock Out,Puma Essential Training Shorts,APP-094,10,Aayush's Depot,B2B Client – Flipkart,Retail dispatch to store,Priya Nair
+2026-02-08 16:15,Stock In,Anker 65W GaN USB-C Wall Charger,ELE-108,58,"TechSource Warehouse, Andheri East",Animesh's Depot,Scheduled reorder from supplier,Suresh Patil
+2026-02-08 15:45,Stock Out,American Eagle Skinny Jeans,APP-039,19,Aayush's Depot,Retail Store – Pune,Festival sale order fulfilled,Aayush Gupta
+2026-02-08 14:45,Stock In,Sony WH-1000XM5 Noise Cancelling Headphones,ELE-114,28,"AudioPro Distribution Hub, Kurla",Animesh's Depot,Supplier advance shipment,Suresh Patil
+2026-02-08 09:00,Stock In,TP-Link Archer AC1750 Dual Band WiFi Router,ELE-007,42,"TechSource Warehouse, Andheri East",Animesh's Depot,Seasonal stock buildup,Rohan Mehta
+2026-02-08 08:30,Stock Out,Amazon Fire TV Stick 4K,ELE-082,31,Animesh's Depot,B2B Client – Flipkart,Bulk B2B order dispatched,Animesh Sharma
+2026-02-07 16:30,Transfer,American Eagle Skinny Jeans,APP-039,26,Aayush's Depot,Animesh's Depot,Inter-depot rebalancing – weekly cycle,Priya Nair
+2026-02-07 09:00,Stock In,Oakley Frogskins Sunglasses,ACC-067,28,"LuxAccessories Pvt, Fort",Abhay's Depot,Back-order fulfilled by supplier,Pooja Kulkarni
+2026-02-07 08:15,Return,GoPro HERO 11 Black,ELE-001,3,Online Customer Return,Animesh's Depot,Wrong item shipped – returned,Rohan Mehta
+2026-02-06 16:30,Stock In,Anker 7-in-1 USB-C Hub with 4K HDMI,ELE-009,69,"TechSource Warehouse, Andheri East",Animesh's Depot,Supplier advance shipment,Animesh Sharma
+2026-02-06 11:30,Stock Out,Champion Reverse Weave Crew,APP-027,15,Aayush's Depot,B2B Client – Flipkart,Same-day delivery order,Aayush Gupta
+2026-02-06 10:30,Stock In,Gap Men's Slim Fit Khaki Chino Pants,APP-037,33,"FashionFirst Central, Dadar",Aayush's Depot,Reorder point triggered – auto purchase,Kavya Reddy
+2026-02-06 09:15,Transfer,Ray-Ban Wayfarer Sunglasses,ACC-066,10,Abhay's Depot,Parth's Depot,High demand at destination depot,Rahul Verma
+2026-02-05 14:15,Stock Out,Champion Reverse Weave Crew,APP-027,31,Aayush's Depot,B2B Client – Amazon FBA,Festival sale order fulfilled,Kavya Reddy
+2026-02-02 15:45,Stock Out,Levi's Men's Braided Genuine Leather Belt,ACC-131,36,Abhay's Depot,Retail Store – Pune,Bulk B2B order dispatched,Rahul Verma
+2026-01-31 14:00,Stock Out,AMD Ryzen 7 5800X 8-Core 3.8GHz CPU,ELE-003,6,Animesh's Depot,Retail Store – Pune,Export consignment dispatched,Animesh Sharma
+2026-01-31 09:00,Return,TP-Link Kasa Smart Plug 4-Pack,ELE-085,4,B2B Client Return,Animesh's Depot,Warranty return processed,Rohan Mehta
+2026-01-30 18:15,Return,Dickies Men's Long Sleeve Work Shirt,APP-025,3,Retail Store – Return,Aayush's Depot,Customer return – wrong size,Priya Nair
+2026-01-29 11:30,Return,"ASUS VivoBook 14"" Intel i3 4GB 128GB Laptop",ELE-104,3,Online Customer Return,Animesh's Depot,Customer return – changed mind,Animesh Sharma
+2026-01-28 16:30,Stock In,Reebok Workout Ready Sports Bra,APP-095,32,"ActiveWear Hub, Goregaon",Aayush's Depot,Reorder point triggered – auto purchase,Priya Nair
+2026-01-28 14:30,Stock Out,Amazon Echo Dot 5th Gen,ELE-089,16,Animesh's Depot,Walk-in Customer,Retail dispatch to store,Animesh Sharma
+2026-01-28 14:00,Stock Out,Nike Dri-FIT Training Tee,APP-091,40,Aayush's Depot,B2B Client – Flipkart,Customer order fulfilled – online,Kavya Reddy
+2026-01-28 11:00,Stock In,"SanDisk 1TB 2.5"" SATA Internal SSD",ELE-005,39,"TechSource Warehouse, Andheri East",Animesh's Depot,Bulk purchase order fulfilled,Rohan Mehta
+2026-01-27 18:15,Stock Out,Adidas Men's Essentials 3-Stripe Joggers,APP-123,35,Aayush's Depot,Walk-in Customer,Retail dispatch to store,Priya Nair
+2026-01-27 16:45,Stock Out,Patagonia Men's Better Sweater 1/4-Zip Fleece,APP-033,16,Aayush's Depot,Walk-in Customer,Export consignment dispatched,Aayush Gupta
+2026-01-25 13:30,Stock In,Elgato Stream Deck,ELE-013,83,"TechSource Warehouse, Andheri East",Animesh's Depot,Reorder point triggered – auto purchase,Animesh Sharma
+2026-01-25 13:15,Stock Out,Seagate Expansion 2TB USB 3.0 External HDD,ELE-008,13,Animesh's Depot,B2B Client – Flipkart,Retail dispatch to store,Animesh Sharma
+2026-01-25 10:45,Stock Out,Bose QuietComfort 45 Wireless Headphones,ELE-115,11,Animesh's Depot,Retail Store – Mumbai,Festival sale order fulfilled,Suresh Patil
+2026-01-24 18:30,Stock In,Fjällräven Kånken Backpack,ACC-075,98,"OutdoorGear Hub, Powai",Abhay's Depot,Scheduled reorder from supplier,Pooja Kulkarni
+2026-01-24 15:30,Stock Out,"Crucial MX500 500GB 2.5"" SATA Internal SSD",ELE-020,19,Animesh's Depot,Export – GCC Region,Festival sale order fulfilled,Suresh Patil
+2026-01-24 15:15,Stock In,Champion Performance Socks 6-Pack,APP-097,61,"ActiveWear Hub, Goregaon",Aayush's Depot,Back-order fulfilled by supplier,Kavya Reddy
+2026-01-23 10:15,Stock Out,JBL Flip 5 Portable Speaker,ELE-090,17,Animesh's Depot,Online Customer – Delivery,Export consignment dispatched,Rohan Mehta
+2026-01-22 15:00,Stock In,Carhartt Knit Beanie,APP-026,38,"OutdoorGear Hub, Powai",Aayush's Depot,Back-order fulfilled by supplier,Kavya Reddy
+2026-01-22 14:00,Transfer,Nike Revolution 6 Running,SNE-045,37,Parth's Depot,Aayush's Depot,Emergency stock transfer – critical level,Sneha Joshi
+2026-01-22 13:15,Adjustment,Belkin 12-Outlet Surge Protector,ELE-016,1,Animesh's Depot,Animesh's Depot,Barcode scan error corrected,Rohan Mehta
+2026-01-21 12:15,Stock Out,Samsung Galaxy Buds2 Pro True Wireless Earbuds,ELE-117,20,Animesh's Depot,B2B Client – Flipkart,Customer order fulfilled – online,Animesh Sharma
+2026-01-20 14:45,Stock Out,Tile Mate Bluetooth Tracker,ACC-079,23,Abhay's Depot,B2B Client – Flipkart,Customer order fulfilled – online,Abhay Singh
+2026-01-20 12:45,Stock Out,Belkin 10ft Lightning to USB-A Cable MFi,ELE-109,32,Animesh's Depot,Retail Store – Pune,Subscription order shipped,Suresh Patil
+2026-01-19 18:15,Stock Out,Under Armour HeatGear Shirt,APP-093,9,Aayush's Depot,Corporate Order – Infosys,Customer order fulfilled – online,Priya Nair
+2026-01-19 10:30,Adjustment,Patagonia Men's Better Sweater 1/4-Zip Fleece,APP-033,1,Aayush's Depot,Aayush's Depot,Shrinkage adjustment after audit,Aayush Gupta
+2026-01-18 13:00,Stock In,Tommy Hilfiger Men's Classic Polo Shirt,APP-120,25,"StyleHub Distribution, Bandra",Aayush's Depot,Bulk purchase order fulfilled,Kavya Reddy
+2026-01-18 13:00,Adjustment,"Briggs & Riley Rhapsody 21"" Carry-On Luggage",ACC-135,-5,Abhay's Depot,Abhay's Depot,Damaged goods written off,Abhay Singh
+2026-01-18 10:15,Stock Out,Google Chromecast with TV,ELE-083,39,Animesh's Depot,B2B Client – Amazon FBA,Retail dispatch to store,Animesh Sharma
+2026-01-18 08:30,Stock Out,Nike Air Force 1 White,SNE-043,31,Parth's Depot,B2B Client – Amazon FBA,Same-day delivery order,Arjun Desai
+2026-01-17 13:30,Stock Out,Zara Men's Slim Fit Chino Trousers,APP-124,14,Aayush's Depot,Online Customer – Delivery,Flash sale order fulfilled,Priya Nair
+2026-01-17 10:30,Stock Out,"SanDisk 1TB 2.5"" SATA Internal SSD",ELE-005,9,Animesh's Depot,Retail Store – Mumbai,Flash sale order fulfilled,Animesh Sharma
+2026-01-16 15:45,Transfer,Apple AirPods Pro 2nd Gen with MagSafe Case,ELE-116,13,Animesh's Depot,Abhay's Depot,Inter-depot rebalancing – weekly cycle,Rohan Mehta
+2026-01-16 12:45,Transfer,Under Armour Undeniable Duffel,APP-100,15,Aayush's Depot,Abhay's Depot,Seasonal demand shift,Aayush Gupta
+2026-01-15 11:45,Stock Out,Microsoft Xbox Controller,ELE-018,33,Animesh's Depot,Retail Store – Mumbai,Bulk B2B order dispatched,Rohan Mehta
+2026-01-15 10:15,Stock Out,Reebok Classic Leather,SNE-048,13,Parth's Depot,B2B Client – Amazon FBA,Retail dispatch to store,Sneha Joshi
+2026-01-15 09:30,Stock Out,Gildan Heavy Cotton T-Shirt,APP-022,36,Aayush's Depot,Export – GCC Region,Export consignment dispatched,Kavya Reddy
+2026-01-14 17:15,Stock In,Bellroy Slim Sleeve Wallet,ACC-077,23,"LuxAccessories Pvt, Fort",Abhay's Depot,Bulk purchase order fulfilled,Rahul Verma
+2026-01-14 15:45,Stock In,Fossil Men's Townsman Chronograph Watch,ACC-133,21,"LuxAccessories Pvt, Fort",Abhay's Depot,Seasonal stock buildup,Abhay Singh
+2026-01-13 14:45,Stock In,Nike Tanjun Running Shoes,SNE-055,34,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Bulk purchase order fulfilled,Arjun Desai
+2026-01-12 18:30,Return,Timex Weekender 38mm Leather Strap Quartz Watch,ACC-064,1,Retail Store – Return,Abhay's Depot,Wrong item shipped – returned,Rahul Verma
+2026-01-11 15:00,Stock In,Levi's Men's Braided Genuine Leather Belt,ACC-131,55,"FashionFirst Central, Dadar",Abhay's Depot,Reorder point triggered – auto purchase,Rahul Verma
+2026-01-10 15:30,Adjustment,Nike Swoosh Headband 2-Pack,APP-098,-2,Aayush's Depot,Aayush's Depot,Damaged goods written off,Priya Nair
+2026-01-10 15:00,Transfer,Google Chromecast with TV,ELE-083,32,Animesh's Depot,Aayush's Depot,Seasonal demand shift,Animesh Sharma
+2026-01-10 14:30,Stock Out,Amazon Echo Dot 5th Gen,ELE-089,23,Animesh's Depot,Online Customer – Delivery,Festival sale order fulfilled,Rohan Mehta
+2026-01-09 16:00,Stock In,"ASUS TUF VG249Q 24"" FHD 144Hz Gaming Monitor",ELE-015,12,"TechSource Warehouse, Andheri East",Animesh's Depot,Reorder point triggered – auto purchase,Animesh Sharma
+2026-01-09 13:00,Transfer,"Crucial MX500 500GB 2.5"" SATA Internal SSD",ELE-020,27,Animesh's Depot,Parth's Depot,Surplus stock redistribution,Rohan Mehta
+2026-01-08 15:00,Stock In,Dickies Men's Long Sleeve Work Shirt,APP-025,55,"UrbanWear Depot, Vile Parle",Aayush's Depot,Scheduled reorder from supplier,Kavya Reddy
+2026-01-07 17:15,Stock Out,Ridge Carbon Fiber Wallet,ACC-078,18,Abhay's Depot,Corporate Order – Infosys,Bulk B2B order dispatched,Rahul Verma
+2026-01-07 10:00,Stock Out,Nintendo Ring Fit Adventure,ELE-019,28,Animesh's Depot,B2B Client – Amazon FBA,Customer order fulfilled – online,Suresh Patil
+2026-01-06 08:45,Stock Out,Adidas Cloudfoam Pure,SNE-046,15,Parth's Depot,Walk-in Customer,Export consignment dispatched,Parth Shewale
+2026-01-06 08:30,Stock Out,New Balance Fresh Foam 1080v12,SNE-128,15,Parth's Depot,Corporate Order – Infosys,Retail dispatch to store,Arjun Desai
+2026-01-05 18:00,Stock In,Converse Chuck Taylor All Star,SNE-050,69,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Scheduled reorder from supplier,Parth Shewale
+2026-01-05 17:15,Transfer,Wrangler Cowboy Cut Jeans,APP-028,15,Aayush's Depot,Parth's Depot,Surplus stock redistribution,Kavya Reddy
+2026-01-05 11:15,Stock Out,Apple 20W USB-C Fast Charger Adapter,ELE-107,19,Animesh's Depot,Walk-in Customer,Flash sale order fulfilled,Suresh Patil
+2026-01-04 13:15,Transfer,Stanley Classic Thermos,ACC-070,16,Abhay's Depot,Animesh's Depot,Inter-depot rebalancing – weekly cycle,Rahul Verma
+2026-01-02 18:15,Stock In,Tommy Hilfiger Men's Casual Leather Belt,ACC-132,26,"StyleHub Distribution, Bandra",Abhay's Depot,Bulk purchase order fulfilled,Pooja Kulkarni
+2026-01-01 16:45,Stock Out,Yeti Rambler 30oz Tumbler,ACC-068,34,Abhay's Depot,Retail Store – Mumbai,Same-day delivery order,Rahul Verma
+2026-01-01 14:45,Stock Out,Adidas Originals Trefoil Cap,APP-099,11,Aayush's Depot,Retail Store – Pune,Export consignment dispatched,Priya Nair
+2026-01-01 14:15,Stock In,Contigo Autoseal Travel Mug,ACC-071,72,"HomeEssentials Hub, Navi Mumbai",Abhay's Depot,Return from customer – restocked,Rahul Verma
+2026-01-01 10:00,Stock Out,Philips Hue White 2-Pack,ELE-084,11,Animesh's Depot,Export – GCC Region,Bulk B2B order dispatched,Rohan Mehta
+2025-12-31 18:00,Stock Out,"Samsonite Winfield 2 Hardside 28"" Checked Luggage",ACC-072,7,Abhay's Depot,Retail Store – Mumbai,Bulk B2B order dispatched,Rahul Verma
+2025-12-31 14:30,Transfer,HyperX Cloud II Headset,ELE-012,17,Animesh's Depot,Abhay's Depot,Depot capacity optimisation,Rohan Mehta
+2025-12-31 12:30,Stock Out,Under Armour Undeniable Duffel,APP-100,11,Aayush's Depot,Corporate Order – Infosys,Festival sale order fulfilled,Priya Nair
+2025-12-31 12:15,Stock Out,Champion Performance Socks 6-Pack,APP-097,29,Aayush's Depot,B2B Client – Flipkart,Retail dispatch to store,Priya Nair
+2025-12-30 13:15,Stock Out,Saucony Ride 16 Running Shoes,SNE-130,10,Parth's Depot,Retail Store – Mumbai,Bulk B2B order dispatched,Parth Shewale
+2025-12-29 16:45,Stock Out,Blue Yeti USB Microphone,ELE-010,15,Animesh's Depot,Corporate Order – Infosys,Festival sale order fulfilled,Rohan Mehta
+2025-12-29 15:00,Stock In,Ray-Ban Aviator Classic Gold Frame Sunglasses,ACC-134,98,"LuxAccessories Pvt, Fort",Abhay's Depot,Supplier advance shipment,Abhay Singh
+2025-12-29 13:45,Stock Out,Ring Video Doorbell Wired,ELE-087,23,Animesh's Depot,Corporate Order – Infosys,Export consignment dispatched,Suresh Patil
+2025-12-29 10:15,Adjustment,Fossil Leather Bifold Wallet,ACC-063,-4,Abhay's Depot,Abhay's Depot,System sync reconciliation,Rahul Verma
+2025-12-28 14:30,Adjustment,Crocs Classic Clog,SNE-060,2,Parth's Depot,Parth's Depot,Shrinkage adjustment after audit,Sneha Joshi
+2025-12-27 18:15,Stock In,Oakley Frogskins Sunglasses,ACC-067,27,"LuxAccessories Pvt, Fort",Abhay's Depot,Supplier advance shipment,Rahul Verma
+2025-12-27 18:00,Stock In,Anker 15W Qi2 Wireless Charging Pad,ELE-110,51,"TechSource Warehouse, Andheri East",Animesh's Depot,Bulk purchase order fulfilled,Rohan Mehta
+2025-12-27 15:00,Stock In,Carhartt Knit Beanie,APP-026,31,"OutdoorGear Hub, Powai",Aayush's Depot,Back-order fulfilled by supplier,Kavya Reddy
+2025-12-27 08:30,Stock In,Vans Old Skool Black/White,SNE-051,50,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Return from customer – restocked,Sneha Joshi
+2025-12-26 16:45,Stock In,Nintendo Ring Fit Adventure,ELE-019,108,"GameWorld Supply, Thane",Animesh's Depot,Back-order fulfilled by supplier,Animesh Sharma
+2025-12-25 15:15,Return,Hydro Flask 32oz Wide Mouth,ACC-069,1,B2B Client Return,Abhay's Depot,Wrong item shipped – returned,Abhay Singh
+2025-12-23 17:30,Return,NVIDIA GeForce RTX 4070 12GB GDDR6X,ELE-002,2,B2B Client Return,Animesh's Depot,Damaged in transit – returned to supplier,Animesh Sharma
+2025-12-23 16:45,Adjustment,Sony WH-1000XM5 Noise Cancelling Headphones,ELE-114,-3,Animesh's Depot,Animesh's Depot,System sync reconciliation,Suresh Patil
+2025-12-21 16:15,Return,Levi's 511 Slim Fit Men's Stretch Jeans,APP-118,4,Retail Store – Return,Aayush's Depot,Supplier recall – quality issue,Kavya Reddy
+2025-12-21 12:00,Stock Out,H&M Men's Regular Fit Oxford Shirt,APP-125,19,Aayush's Depot,Corporate Order – Infosys,Same-day delivery order,Kavya Reddy
+2025-12-21 10:15,Stock Out,Adidas Superstar Sneakers,SNE-042,21,Parth's Depot,Export – GCC Region,Flash sale order fulfilled,Parth Shewale
+2025-12-21 09:30,Stock Out,Under Armour Charged Assert,SNE-054,10,Parth's Depot,Retail Store – Pune,Same-day delivery order,Arjun Desai
+2025-12-20 17:30,Stock In,Contigo Autoseal Travel Mug,ACC-071,39,"HomeEssentials Hub, Navi Mumbai",Abhay's Depot,Return from customer – restocked,Rahul Verma
+2025-12-20 15:15,Transfer,HyperX Cloud II Headset,ELE-012,40,Animesh's Depot,Parth's Depot,High demand at destination depot,Animesh Sharma
+2025-12-20 12:30,Stock Out,Fjällräven Kånken Backpack,ACC-075,12,Abhay's Depot,Retail Store – Mumbai,Bulk B2B order dispatched,Abhay Singh
+2025-12-20 10:30,Stock Out,Anker 15W Qi2 Wireless Charging Pad,ELE-110,12,Animesh's Depot,Retail Store – Pune,Festival sale order fulfilled,Animesh Sharma
+2025-12-20 09:15,Adjustment,Saucony Ride 16 Running Shoes,SNE-130,-3,Parth's Depot,Parth's Depot,Damaged goods written off,Parth Shewale
+2025-12-19 18:00,Stock Out,Apple AirPods Pro 2nd Gen with MagSafe Case,ELE-116,9,Animesh's Depot,Corporate Order – Infosys,Retail dispatch to store,Rohan Mehta
+2025-12-19 12:15,Stock Out,Tommy Hilfiger Men's Classic Polo Shirt,APP-120,13,Aayush's Depot,Online Customer – Delivery,Retail dispatch to store,Aayush Gupta
+2025-12-19 11:30,Stock Out,Reebok Classic Leather,SNE-048,6,Parth's Depot,B2B Client – Flipkart,Export consignment dispatched,Arjun Desai
+2025-12-18 15:45,Stock In,Nike Air Zoom Pegasus 40 Running Shoes,SNE-126,38,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Back-order fulfilled by supplier,Sneha Joshi
+2025-12-18 12:00,Adjustment,Samsung Galaxy Buds2 Pro True Wireless Earbuds,ELE-117,-3,Animesh's Depot,Animesh's Depot,Quality check failure – units removed,Rohan Mehta
+2025-12-17 15:15,Transfer,"HP Pavilion 15.6"" AMD Ryzen 5 8GB 256GB Laptop",ELE-103,20,Animesh's Depot,Abhay's Depot,Inventory balancing between depots,Animesh Sharma
+2025-12-17 15:00,Stock In,"American Tourister Fieldbrook XLT 21"" Softside Carry-On",ACC-073,25,"TravelGear Central, BKC",Abhay's Depot,Emergency restock – low inventory,Pooja Kulkarni
+2025-12-16 17:15,Stock In,"Briggs & Riley Rhapsody 21"" Carry-On Luggage",ACC-135,98,"TravelGear Central, BKC",Abhay's Depot,Seasonal stock buildup,Rahul Verma
+2025-12-16 17:00,Adjustment,"Lenovo IdeaPad 3 15"" Intel i5 8GB 512GB Laptop",ELE-102,-5,Animesh's Depot,Animesh's Depot,Expired stock removed,Suresh Patil
+2025-12-16 15:45,Stock In,Adidas Ultraboost 22 Running Shoes,SNE-127,35,"Footlocker Regional Depot, Lower Parel",Parth's Depot,Emergency restock – low inventory,Parth Shewale
+2025-12-16 13:45,Stock Out,Apple 20W USB-C Fast Charger Adapter,ELE-107,35,Animesh's Depot,B2B Client – Flipkart,Flash sale order fulfilled,Suresh Patil
+2025-12-16 09:45,Transfer,Ridge Carbon Fiber Wallet,ACC-078,19,Abhay's Depot,Animesh's Depot,Requested by destination depot manager,Abhay Singh
+2025-12-16 08:45,Stock Out,Gap Men's Slim Fit Khaki Chino Pants,APP-037,21,Aayush's Depot,B2B Client – Flipkart,Same-day delivery order,Priya Nair
