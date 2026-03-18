@@ -158,7 +158,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Tell the server to revoke the refresh token from Redis and clear the cookie
+      // Tell the server to revoke the refresh token from MongoDB and clear the cookie
       await axios.post('/api/v1/auth/logout', {}, { withCredentials: true });
     } catch {
       // Logout anyway even if server is unreachable
