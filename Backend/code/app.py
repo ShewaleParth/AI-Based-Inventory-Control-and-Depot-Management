@@ -24,7 +24,7 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 # Load environment variables
 from dotenv import load_dotenv
 
-# Try multiple locations for .env to ensures we sync with server.js
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env_paths = [
     os.path.join(BASE_DIR, 'server', '.env'),
@@ -35,14 +35,12 @@ for path in env_paths:
     if os.path.exists(path):
         load_dotenv(path)
         print(f" Loaded environment from {path}")
-        break  # Use the first found .env — subsequent loads would be no-ops anyway
+        break  
 
 app = Flask(__name__)
-# Allow CORS for all domains in development, or restrict based on env
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# MongoDB Configuration
-# Require MONGODB_URI from environment — never hardcode credentials in source
+
 MONGODB_URI = os.getenv("MONGODB_URI")
 if not MONGODB_URI:
     raise EnvironmentError(
@@ -50,7 +48,7 @@ if not MONGODB_URI:
         "Please configure your .env file before starting the server."
     )
 client = MongoClient(MONGODB_URI)
-db = client.get_database() # Uses database name from URI or defaults
+db = client.get_database() 
 if not db.name or db.name == 'test':
     db = client['animesh']
 
@@ -76,7 +74,7 @@ ENCODERS_PATH = os.path.join(MODELS_ROOT, "target_label_encoders.pkl")
 
 
 def load_models():
-    """Load all ML models and encoders at startup"""
+    
     global ml_model, use_xgb_native, target_encoders, arima_models
     
     try:
@@ -216,19 +214,7 @@ def predict_stock_status(X_test):
 
 
 def generate_historical_sales_from_inputs(daily_sales, weekly_sales, num_days=60):
-    """
-    Generate synthetic historical sales data based on user inputs.
-    This creates a realistic time series that ARIMA can learn from.
-    
-    Args:
-        daily_sales: Average daily sales rate
-        weekly_sales: Average weekly sales rate
-        num_days: Number of historical days to generate
-    
-    Returns:
-        Array of historical sales values
-    """
-    # Calculate base sales from both metrics
+   
     avg_from_daily = daily_sales
     avg_from_weekly = weekly_sales / 7
     base_sales = (avg_from_daily * 0.4 + avg_from_weekly * 0.6)
@@ -1061,5 +1047,4 @@ if __name__ == '__main__':
 
     print(" API running on http://localhost:5001")
     print(" CORS enabled for all origins (*)")
-    # use_reloader=False fixes WinError 10038 on Windows
     app.run(debug=True, port=5001, host='0.0.0.0', use_reloader=False)
