@@ -323,9 +323,9 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
  * @desc    Get current user info
  * @access  Private
  */
-router.get('/me', async (req, res) => {
+const authenticateToken = require('../middleware/auth');
+router.get('/me', authenticateToken, async (req, res) => {
   try {
-    // authenticateToken middleware should be applied in server.js
     const userId = req.userId;
 
     const user = await req.app.locals.User.findById(userId).select('-password -otp -otpExpiry');
@@ -459,30 +459,37 @@ router.post('/reset-password', authLimiter, async (req, res) => {
  * @access  Public (uses httpOnly cookie)
  */
 router.post('/refresh', async (req, res) => {
+  console.log('[Auth] /refresh hit. Cookies present:', Object.keys(req.cookies || {}));
   try {
     const incomingRefresh = req.cookies?.refreshToken;
 
     if (!incomingRefresh) {
+      console.log('[Auth] Refresh failed: No refreshToken cookie found');
       return res.status(401).json({ message: 'No refresh token provided' });
     }
 
     // Verify the JWT signature
     const decoded = verifyRefreshToken(incomingRefresh);
     if (!decoded) {
+      console.log('[Auth] Refresh failed: JWT signature verification failed');
       res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
+      res.clearCookie('refreshToken', { path: '/api/v1/auth' }); // Force clear legacy Redis cookie
       return res.status(401).json({ message: 'Invalid or expired refresh token' });
     }
 
     const { userId, jti } = decoded;
 
-    // Check Redis — token might have been revoked on logout
+    // Check MongoDB — token might have been revoked on logout
     const valid = await isRefreshTokenValid(userId, jti);
     if (!valid) {
+      console.log('[Auth] Refresh failed: Token jti not found or expired in MongoDB (jti:', jti, ')');
       res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
+      res.clearCookie('refreshToken', { path: '/api/v1/auth' }); // Force clear legacy Redis cookie
       return res.status(401).json({ message: 'Session revoked. Please log in again.' });
     }
 
     // Rotate: revoke old refresh token, issue a new pair
+    console.log('[Auth] Refresh successful for user:', userId);
     await revokeRefreshToken(userId, jti);
     const newAccessToken = await issueTokens(res, userId);
 
@@ -512,12 +519,14 @@ router.post('/logout', async (req, res) => {
 
     // Clear the cookie regardless
     res.clearCookie('refreshToken', { ...REFRESH_COOKIE_OPTIONS, maxAge: 0 });
+    res.clearCookie('refreshToken', { path: '/api/v1/auth' }); // Force clear legacy Redis cookie
     res.json({ message: 'Logged out successfully' });
 
   } catch (error) {
     console.error('Logout error:', error);
     // Still clear the cookie even on error
     res.clearCookie('refreshToken', { ...REFRESH_COOKIE_OPTIONS, maxAge: 0 });
+    res.clearCookie('refreshToken', { path: '/api/v1/auth' }); // Force clear legacy Redis cookie
     res.json({ message: 'Logged out' });
   }
 });

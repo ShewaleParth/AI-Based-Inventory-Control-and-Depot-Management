@@ -9,6 +9,7 @@ const Report = require('./Report');
 const DepotAssignment = require('./DepotAssignment');
 const StockRequest = require('./StockRequest');
 const DepotStock = require('./DepotStock');
+const RefreshToken = require('./RefreshToken');
 
 module.exports = {
   User,
@@ -20,5 +21,7 @@ module.exports = {
   Report,
   DepotAssignment,
   StockRequest,
-  DepotStock
+  DepotStock,
+  RefreshToken
 };
+

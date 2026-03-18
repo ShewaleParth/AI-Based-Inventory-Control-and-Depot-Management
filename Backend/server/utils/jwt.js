@@ -20,8 +20,11 @@ const verifyAccessToken = (token) => {
 };
 
 // ─── Refresh Token (7 days) ───────────────────────────────────────────────────
-// Long-lived, stored in httpOnly cookie + tracked in Redis for revocation.
+// Long-lived, stored in httpOnly cookie + tracked in MongoDB for revocation.
 // Each refresh token has a unique jti (JWT ID) so individual tokens can be revoked.
+
+const REFRESH_TOKEN_TTL_DAYS = 7;
+const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 const generateRefreshToken = (userId) => {
   const secret = process.env.JWT_REFRESH_SECRET;
@@ -41,45 +44,55 @@ const verifyRefreshToken = (token) => {
   }
 };
 
-// ─── Redis helpers ────────────────────────────────────────────────────────────
-
-const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days in seconds
+// ─── MongoDB-based token helpers ──────────────────────────────────────────────
+// No Redis required. Uses the RefreshToken model with a MongoDB TTL index.
 
 /**
- * Persist a refresh token in Redis.
- * Key: refresh:<userId>:<jti>
+ * Persist a refresh token in MongoDB.
  */
 async function storeRefreshToken(userId, jti) {
   try {
-    const { cache } = require('../config/redis');
-    await cache.set(`refresh:${userId}:${jti}`, '1', REFRESH_TOKEN_TTL);
+    const RefreshToken = require('../models/RefreshToken');
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+    // Upsert in case of rare duplicate (rotation race condition)
+    await RefreshToken.findOneAndUpdate(
+      { jti },
+      { userId, jti, expiresAt },
+      { upsert: true, new: true }
+    );
   } catch (err) {
-    console.warn('Could not store refresh token in Redis:', err.message);
+    console.warn('Could not store refresh token in MongoDB:', err.message);
   }
 }
 
 /**
- * Check if a refresh token is still valid in Redis (not revoked).
+ * Check if a refresh token is still valid in MongoDB (not revoked, not expired).
  */
 async function isRefreshTokenValid(userId, jti) {
   try {
-    const { cache } = require('../config/redis');
-    return await cache.exists(`refresh:${userId}:${jti}`);
-  } catch {
-    // If Redis is unavailable, allow the token (graceful degradation)
-    return true;
+    const RefreshToken = require('../models/RefreshToken');
+    const record = await RefreshToken.findOne({
+      jti,
+      userId,
+      expiresAt: { $gt: new Date() }, // not yet expired
+    });
+    return !!record;
+  } catch (err) {
+    // If DB unavailable, reject to be safe (don't allow expired sessions through)
+    console.warn('Could not validate refresh token in MongoDB:', err.message);
+    return false;
   }
 }
 
 /**
- * Revoke a specific refresh token (logout).
+ * Revoke a specific refresh token (single-device logout).
  */
 async function revokeRefreshToken(userId, jti) {
   try {
-    const { cache } = require('../config/redis');
-    await cache.del(`refresh:${userId}:${jti}`);
+    const RefreshToken = require('../models/RefreshToken');
+    await RefreshToken.deleteOne({ jti, userId });
   } catch (err) {
-    console.warn('Could not revoke refresh token in Redis:', err.message);
+    console.warn('Could not revoke refresh token in MongoDB:', err.message);
   }
 }
 
@@ -88,10 +101,10 @@ async function revokeRefreshToken(userId, jti) {
  */
 async function revokeAllRefreshTokens(userId) {
   try {
-    const { cache } = require('../config/redis');
-    await cache.deletePattern(`refresh:${userId}:*`);
+    const RefreshToken = require('../models/RefreshToken');
+    await RefreshToken.deleteMany({ userId });
   } catch (err) {
-    console.warn('Could not revoke all refresh tokens in Redis:', err.message);
+    console.warn('Could not revoke all refresh tokens in MongoDB:', err.message);
   }
 }
 
@@ -100,18 +113,17 @@ async function revokeAllRefreshTokens(userId) {
 /**
  * Standard options for the refresh token httpOnly cookie.
  * httpOnly: JS cannot read it → safe from XSS
- * sameSite: 'lax' works for same-site; use 'none' + secure if cross-origin
+ * path: '/' → cookie is sent on ALL requests, ensuring it reaches /api/v1/auth/refresh
  */
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-  maxAge: REFRESH_TOKEN_TTL * 1000, // ms
-  path: '/api/v1/auth', // only sent to auth routes
+  maxAge: REFRESH_TOKEN_TTL_MS, // ms
+  path: '/', // Send cookie on ALL routes — required so the browser sends it on /api/v1/auth/refresh
 };
 
-// ─── Backward-compatible alias ────────────────────────────────────────────────
-// Existing code that calls generateToken / verifyToken continues to work.
+// ─── Backward-compatible aliases ──────────────────────────────────────────────
 const generateToken = generateAccessToken;
 const verifyToken = verifyAccessToken;
 
@@ -124,7 +136,7 @@ module.exports = {
   // Refresh token
   generateRefreshToken,
   verifyRefreshToken,
-  // Redis helpers
+  // MongoDB helpers (drop-in replacement for Redis helpers)
   storeRefreshToken,
   isRefreshTokenValid,
   revokeRefreshToken,

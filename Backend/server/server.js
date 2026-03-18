@@ -30,10 +30,8 @@ const alertRoutes = require('./routes/alert');
 const adminRoutes = require('./routes/admin');
 const stockRequestRoutes = require('./routes/stockRequests');
 
-// Initialize Redis (Upstash REST API)
-const { redis } = require('./config/redis');
-// TODO: Bull queue requires TCP Redis, not REST API
-// const reportQueue = require('./queues/reportQueue');
+// Note: Redis has been removed. Refresh tokens are stored in MongoDB (RefreshToken model).
+// const reportQueue = require('./queues/reportQueue'); // Requires Redis — disabled
 
 // Validate environment variables
 config.validateEnv();
@@ -87,7 +85,6 @@ app.get('/api/health', async (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     database: 'disconnected',
-    redis: 'disconnected',
     memory: process.memoryUsage(),
     ml: getCircuitStatus()
   };
@@ -98,13 +95,6 @@ app.get('/api/health', async (req, res) => {
   } catch (err) {
     health.status = 'degraded';
     health.database = 'disconnected';
-  }
-
-  try {
-    await redis.ping();
-    health.redis = 'connected';
-  } catch (err) {
-    health.redis = 'disconnected';
   }
 
   const statusCode = health.status === 'ok' ? 200 : 503;
