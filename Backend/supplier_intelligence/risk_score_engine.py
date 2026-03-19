@@ -1,4 +1,4 @@
-import pickle
+﻿import pickle
 import os
 import numpy as np
 import pandas as pd
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     result = engine.predict_risk("Apex Logistics", "Electronics", 500, 50)
     print(result)
 
-# ─── ADD THESE TWO FUNCTIONS TO THE BOTTOM OF risk_score_engine.py ───
+# â”€â”€â”€ ADD THESE TWO FUNCTIONS TO THE BOTTOM OF risk_score_engine.py â”€â”€â”€
 
 import os, joblib, pandas as pd
 from pymongo import MongoClient
@@ -198,3 +198,4 @@ def get_supplier_history(supplier_name, mongo_uri, db_name='sangrahak'):
     ).sort('date', 1))
 
     return docs
+

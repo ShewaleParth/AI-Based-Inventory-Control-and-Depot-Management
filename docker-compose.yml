@@ -1,0 +1,48 @@
+services:
+  frontend:
+    build:
+      context: ./Frontend
+    container_name: ai_revenue_protection_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+      - ai-server
+    networks:
+      - ai-network
+    restart: always
+
+  backend:
+    build:
+      context: ./Backend/server
+    container_name: ai_revenue_protection_backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./Backend/server/.env
+    networks:
+      - ai-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    restart: always
+
+  ai-server:
+    build:
+      context: .
+      dockerfile: ./Backend/code/Dockerfile
+    container_name: ai_revenue_protection_ai_server
+    ports:
+      - "5001:5001"
+    # Python API usually doesn't have a shared .env file, but if it needs variables
+    # they can be added here or mapped via a specific .env file in its directory.
+    # We will pass the DB URI for MongoDB just in case it's used.
+    env_file:
+      - ./Backend/server/.env
+    networks:
+      - ai-network
+    restart: always
+
+networks:
+  ai-network:
+    driver: bridge

@@ -1,10 +1,10 @@
-from flask import Blueprint, request, jsonify
+﻿from flask import Blueprint, request, jsonify
 import pandas as pd
 import os
 
 supplier_routes = Blueprint('supplier_routes', __name__)
 
-# MongoDB db reference — injected via init_db() from app.py
+# MongoDB db reference â€” injected via init_db() from app.py
 _db = None
 
 
@@ -14,7 +14,7 @@ def init_db(database):
     _db = database
 
 
-# ─── HELPER: Compute risk metrics from MongoDB product records ────────────────
+# â”€â”€â”€ HELPER: Compute risk metrics from MongoDB product records â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _compute_risk_from_products(products):
     """
@@ -22,11 +22,11 @@ def _compute_risk_from_products(products):
     collection.  No fake CSV data is needed.
 
     Fields used from each product document:
-      stock        – current total stock
-      reorderPoint – trigger level below which stock is "understocked"
-      leadTime     – how many days this supplier takes to deliver (delay proxy)
-      status       – 'out-of-stock' | 'low-stock' | 'in-stock' | 'overstock'
-      category     – product category
+      stock        â€“ current total stock
+      reorderPoint â€“ trigger level below which stock is "understocked"
+      leadTime     â€“ how many days this supplier takes to deliver (delay proxy)
+      status       â€“ 'out-of-stock' | 'low-stock' | 'in-stock' | 'overstock'
+      category     â€“ product category
     """
     total = len(products)
     if total == 0:
@@ -49,10 +49,10 @@ def _compute_risk_from_products(products):
     # avg_rejection proxy:  % of products currently out-of-stock
     rejection_pct = round((out_of_stock / total) * 100, 1)
 
-    # risk_score (0–100):
-    #   40 pts  → out-of-stock pressure
-    #   35 pts  → understock pressure
-    #   25 pts  → lead-time pressure  (14 days = max pressure)
+    # risk_score (0â€“100):
+    #   40 pts  â†’ out-of-stock pressure
+    #   35 pts  â†’ understock pressure
+    #   25 pts  â†’ lead-time pressure  (14 days = max pressure)
     risk_score = min(100, round(
         (out_of_stock  / total) * 40 +
         (understocked  / total) * 35 +
@@ -81,7 +81,7 @@ def _compute_risk_from_products(products):
     }
 
 
-# ─── ROUTE: GET /api/supplier/risk-overview ───────────────────────────────────
+# â”€â”€â”€ ROUTE: GET /api/supplier/risk-overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @supplier_routes.route('/risk-overview', methods=['GET'])
 def risk_overview():
@@ -89,13 +89,13 @@ def risk_overview():
     Returns supplier risk data.
 
     Strategy:
-      1. PRIMARY  – Query MongoDB products collection for live data.
+      1. PRIMARY  â€“ Query MongoDB products collection for live data.
                     Metrics are derived from real stock / lead-time figures.
-      2. FALLBACK – Read processed_supplier_data.csv if MongoDB is unavailable
+      2. FALLBACK â€“ Read processed_supplier_data.csv if MongoDB is unavailable
                     or has no products yet.
     """
     try:
-        # ── 1. Try MongoDB (live, real data) ──────────────────────────────────
+        # â”€â”€ 1. Try MongoDB (live, real data) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if _db is not None:
             raw_products = list(_db.products.find(
                 {},
@@ -142,7 +142,7 @@ def risk_overview():
                     "source":    "mongodb"
                 })
 
-        # ── 2. Fallback → CSV (in case DB is empty or unavailable) ───────────
+        # â”€â”€ 2. Fallback â†’ CSV (in case DB is empty or unavailable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         DATA_PATH = os.path.join(os.path.dirname(__file__), "processed_supplier_data.csv")
         if not os.path.exists(DATA_PATH):
             return jsonify({
@@ -190,7 +190,7 @@ def risk_overview():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ─── ROUTE: GET /api/supplier/history/<supplier_name> ─────────────────────────
+# â”€â”€â”€ ROUTE: GET /api/supplier/history/<supplier_name> â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @supplier_routes.route('/history/<supplier_name>', methods=['GET'])
 def supplier_history(supplier_name):
@@ -213,7 +213,7 @@ def supplier_history(supplier_name):
             ))
 
             if prods:
-                # Build a trend list — one data point per product (last 10)
+                # Build a trend list â€” one data point per product (last 10)
                 trend = []
                 for p in prods[-10:]:
                     stock  = p.get('stock', 0) or 0
@@ -236,7 +236,7 @@ def supplier_history(supplier_name):
 
                 return jsonify({"success": True, "supplier": supplier_name, "trend": trend, "source": "mongodb"})
 
-        # Fallback → CSV
+        # Fallback â†’ CSV
         DATA_PATH = os.path.join(os.path.dirname(__file__), "processed_supplier_data.csv")
         if not os.path.exists(DATA_PATH):
             return jsonify({"success": False, "error": "No data available"}), 404
@@ -260,7 +260,7 @@ def supplier_history(supplier_name):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ─── ROUTE: POST /api/supplier/predict-risk ───────────────────────────────────
+# â”€â”€â”€ ROUTE: POST /api/supplier/predict-risk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @supplier_routes.route('/predict-risk', methods=['POST'])
 def predict_risk():
@@ -274,7 +274,7 @@ def predict_risk():
         pay_risk   = int(data.get('payment_risk', 0))
 
         # Simple rule-based scoring (no ML model needed for this endpoint)
-        price_factor = min(1.0, price / 200)           # higher price → slightly more risk
+        price_factor = min(1.0, price / 200)           # higher price â†’ slightly more risk
         pay_factor   = pay_risk / 2                    # 0, 0.5, or 1
         risk_score   = round((price_factor * 30) + (pay_factor * 40) + 30)
         risk_score   = max(0, min(100, risk_score))
@@ -291,3 +291,4 @@ def predict_risk():
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
