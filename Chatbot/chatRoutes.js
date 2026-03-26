@@ -1,0 +1,137 @@
+/**
+ * Chatbot API Routes
+ * Base path: /api/v1/chatbot
+ *
+ * All routes require authentication (handled by server.js middleware)
+ */
+
+const express = require('express');
+const router = express.Router();
+const { randomUUID } = require('crypto');
+const uuidv4 = () => randomUUID();
+const {
+  processMessage,
+  getChatHistory,
+  listUserSessions,
+  clearChatHistory,
+  deleteSession
+} = require('./chatbot_service');
+
+/**
+ * POST /api/v1/chatbot/chat
+ * Send a message and get an AI response
+ */
+router.post('/chat', async (req, res) => {
+  try {
+    const { message, sessionId } = req.body;
+    const userId = req.userId;
+    const organizationId = req.organizationId;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ error: 'Message is required', code: 'EMPTY_MESSAGE' });
+    }
+
+    if (message.length > 2000) {
+      return res.status(400).json({ error: 'Message too long (max 2000 chars)', code: 'MESSAGE_TOO_LONG' });
+    }
+
+    // Use provided sessionId or generate a new one
+    const resolvedSessionId = sessionId || uuidv4();
+
+    const result = await processMessage(message.trim(), resolvedSessionId, { _id: userId, organizationId });
+
+    res.json({
+      success: true,
+      reply: result.reply,
+      sessionId: result.sessionId,
+      timestamp: result.timestamp
+    });
+  } catch (error) {
+    console.error('[Chatbot] /chat error:', error.message);
+
+    if (error.status === 429 || error.message?.includes('rate limit')) {
+      return res.status(429).json({ error: 'AI rate limit reached. Please wait a moment.', code: 'RATE_LIMIT' });
+    }
+
+    res.status(500).json({ error: 'Failed to process message', code: 'CHAT_ERROR', details: error.message });
+  }
+});
+
+/**
+ * GET /api/v1/chatbot/history?sessionId=xxx&limit=50
+ * Get chat history for a session
+ */
+router.get('/history', async (req, res) => {
+  try {
+    const { sessionId, limit = 50 } = req.query;
+    const userId = req.userId;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId is required', code: 'MISSING_SESSION_ID' });
+    }
+
+    const history = await getChatHistory(sessionId, userId, parseInt(limit));
+    res.json({ success: true, ...history });
+  } catch (error) {
+    console.error('[Chatbot] /history error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch history', code: 'HISTORY_ERROR' });
+  }
+});
+
+/**
+ * GET /api/v1/chatbot/sessions
+ * List all chat sessions for the current user
+ */
+router.get('/sessions', async (req, res) => {
+  try {
+    const sessions = await listUserSessions(req.userId);
+    res.json({ success: true, sessions });
+  } catch (error) {
+    console.error('[Chatbot] /sessions error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch sessions', code: 'SESSIONS_ERROR' });
+  }
+});
+
+/**
+ * DELETE /api/v1/chatbot/history
+ * Clear messages from a session (keeps the session)
+ */
+router.delete('/history', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const userId = req.user._id;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId is required', code: 'MISSING_SESSION_ID' });
+    }
+
+    const cleared = await clearChatHistory(sessionId, userId);
+    res.json({ success: cleared, message: cleared ? 'Chat history cleared' : 'Session not found' });
+  } catch (error) {
+    console.error('[Chatbot] DELETE /history error:', error.message);
+    res.status(500).json({ error: 'Failed to clear history', code: 'CLEAR_ERROR' });
+  }
+});
+
+/**
+ * DELETE /api/v1/chatbot/session
+ * Delete an entire chat session
+ */
+router.delete('/session', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const userId = req.user._id;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId is required', code: 'MISSING_SESSION_ID' });
+    }
+
+    const deleted = await deleteSession(sessionId, userId);
+    res.json({ success: deleted, message: deleted ? 'Session deleted' : 'Session not found' });
+  } catch (error) {
+    console.error('[Chatbot] DELETE /session error:', error.message);
+    res.status(500).json({ error: 'Failed to delete session', code: 'DELETE_ERROR' });
+  }
+});
+
+module.exports = router;

@@ -24,6 +24,7 @@
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
+    "grok-sdk": "^0.0.1-security",
     "groq-sdk": "^0.37.0",
     "helmet": "^8.1.0",
     "ioredis": "^5.10.0",
