@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Warehouse,
   X,
-  Shield
+  Shield,
+  Bot
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -48,6 +49,7 @@ const Sidebar = ({ activeItem, setActiveItem, isMobileOpen, isCollapsed, onClose
     { icon: LayoutDashboard, label: 'Dashboard', live: true },
     { icon: Package, label: 'Inventory Overview', live: true },
     { icon: Sparkles, label: 'Supplier Risk Radar', live: true },
+    { icon: Bot, label: 'AI Chatbot', live: true },
   ];
 
   const logisticsItems = [

@@ -18,6 +18,7 @@ import MovementTransactions from './pages/MovementTransactions';
 import StockSearchTracking from './pages/StockSearchTracking';
 import Notifications from './pages/Notifications';
 import AdminPanel from './pages/AdminPanel';
+import Chatbot from './pages/Chatbot';
 
 function AppLayout({ children }) {
   const { activeItem, setActiveItem } = useNavigation();
@@ -112,6 +113,8 @@ function AppContent() {
         return <Notifications />;
       case 'Admin Panel':
         return <AdminPanel />;
+      case 'AI Chatbot':
+        return <Chatbot />;
       default:
         return (
           <div className="placeholder-view">

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { can } from '../utils/permissions';
 import { setAuthToken } from '../utils/api';
+import { setChatbotToken } from '../pages/Chatbot';
 
 const AuthContext = createContext(null);
 
@@ -20,10 +21,12 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sync token with the API utility
+  // Sync token with the API utility AND the chatbot axios instance
   useEffect(() => {
     setAuthToken(token);
+    setChatbotToken(token);
   }, [token]);
+
 
   /**
    * Silent refresh: called on app boot and when access token expires.

@@ -29,6 +29,7 @@ const reportsRoutes = require('./routes/reports');
 const alertRoutes = require('./routes/alert');
 const adminRoutes = require('./routes/admin');
 const stockRequestRoutes = require('./routes/stockRequests');
+const chatbotRoutes = require('./chatbot/chatRoutes');
 
 // Note: Redis has been removed. Refresh tokens are stored in MongoDB (RefreshToken model).
 // const reportQueue = require('./queues/reportQueue'); // Requires Redis — disabled
@@ -125,6 +126,7 @@ app.use('/api/alerts', alertAuthMiddleware, alertRoutes); // Alias for Action pl
 
 v1Router.use('/admin', authenticateToken, adminRoutes);
 v1Router.use('/stock-requests', authenticateToken, stockRequestRoutes);
+v1Router.use('/chatbot', authenticateToken, chatbotRoutes);
 
 // Mount the v1 API routes
 app.use('/api/v1', v1Router);
