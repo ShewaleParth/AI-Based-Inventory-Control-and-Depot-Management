@@ -6,6 +6,8 @@ const depotSchema = new mongoose.Schema({
   location: { type: String, required: true },
   capacity: { type: Number, required: true },
   currentUtilization: { type: Number, default: 0 },
+  lat: { type: Number, default: null },
+  lng: { type: Number, default: null },
   itemsStored: { type: Number, default: 0 },
   products: [{
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },

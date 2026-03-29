@@ -187,6 +187,11 @@ export const api = {
         return response.data;
     },
 
+    updateDepotCoordinates: async (depotId, lat, lng) => {
+        const response = await nodeApi.patch(`/depots/${depotId}/coordinates`, { lat, lng });
+        return response.data;
+    },
+
     // Python AI Backend
     predictCustom: async (data) => {
         const response = await pythonApi.post('/predict/custom', data);

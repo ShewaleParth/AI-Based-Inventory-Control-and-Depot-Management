@@ -21,6 +21,8 @@ router.get('/', async (req, res, next) => {
         itemsStored: depot.itemsStored,
         status: depot.status,
         products: depot.products,
+        lat: depot.lat,
+        lng: depot.lng,
         createdAt: depot.createdAt
       })),
       total: depots.length
@@ -33,13 +35,15 @@ router.get('/', async (req, res, next) => {
 // POST - Create depot (MANAGER + ADMIN)
 router.post('/', requirePermission('depots:manage'), async (req, res, next) => {
   try {
-    const { name, location, capacity } = req.body;
+    const { name, location, capacity, lat, lng } = req.body;
 
     const depot = new Depot({
-      userId: req.organizationId, // Depot belongs to the organization
+      userId: req.organizationId,
       name,
       location,
       capacity,
+      lat: lat || null,
+      lng: lng || null,
       currentUtilization: 0,
       itemsStored: 0,
       products: [],
@@ -52,6 +56,32 @@ router.post('/', requirePermission('depots:manage'), async (req, res, next) => {
       message: 'Depot created successfully',
       depot
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH - Update depot map coordinates (drag & drop pin)
+router.patch('/:id/coordinates', requirePermission('depots:manage'), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { lat, lng } = req.body;
+
+    if (lat === undefined || lng === undefined) {
+      return res.status(400).json({ message: 'lat and lng are required' });
+    }
+
+    const depot = await Depot.findOneAndUpdate(
+      { _id: id, userId: req.organizationId },
+      { lat, lng, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!depot) {
+      return res.status(404).json({ message: 'Depot not found' });
+    }
+
+    res.json({ message: 'Coordinates updated', lat: depot.lat, lng: depot.lng });
   } catch (error) {
     next(error);
   }
