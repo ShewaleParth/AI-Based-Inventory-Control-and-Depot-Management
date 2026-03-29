@@ -19,6 +19,7 @@ import StockSearchTracking from './pages/StockSearchTracking';
 import Notifications from './pages/Notifications';
 import AdminPanel from './pages/AdminPanel';
 import Chatbot from './pages/Chatbot';
+import DepotMap from './pages/DepotMap';
 
 function AppLayout({ children }) {
   const { activeItem, setActiveItem } = useNavigation();
@@ -115,6 +116,8 @@ function AppContent() {
         return <AdminPanel />;
       case 'AI Chatbot':
         return <Chatbot />;
+      case 'Depot Map':
+        return <DepotMap />;
       default:
         return (
           <div className="placeholder-view">

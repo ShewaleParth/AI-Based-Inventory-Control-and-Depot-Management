@@ -16,7 +16,8 @@ import {
   Warehouse,
   X,
   Shield,
-  Bot
+  Bot,
+  Map
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -54,6 +55,7 @@ const Sidebar = ({ activeItem, setActiveItem, isMobileOpen, isCollapsed, onClose
 
   const logisticsItems = [
     { icon: Warehouse, label: 'Depots', live: true },
+    { icon: Map,       label: 'Depot Map', live: true },
     { icon: RefreshCcw, label: 'Movement & Transactions', live: true },
     { icon: Search, label: 'Stock Search & Tracking', live: true },
   ];
