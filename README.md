@@ -139,7 +139,7 @@ A regression-based ensemble for supplier reliability.
 ---
 
 ## 👤 Authors
-- **Parth Shewale** - *Lead Developer* - [@ShewaleParth](https://github.com/ShewaleParth)
+- **Abhay Patil** - *Lead Developer* - [@Abhay Patil](https://github.com/Abhaypatil6)
 
 ---
 <div align="center">
