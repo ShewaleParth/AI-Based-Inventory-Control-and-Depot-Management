@@ -3,7 +3,8 @@ import { useNavigation } from '../context/NavigationContext';
 import { 
     TrendingUp, TrendingDown, ArrowRightLeft, Package, 
     Filter, Download, Calendar, Search, RefreshCw,
-    Clock, MapPin, User, ChevronDown, Plus, Eye, X
+    Clock, MapPin, User, ChevronDown, Plus, Eye, X,
+    Upload, FileText, CheckCircle, AlertCircle, Info
 } from 'lucide-react';
 import { 
     BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -33,6 +34,14 @@ const MovementTransactions = () => {
     const [initialQuantity, setInitialQuantity] = useState('');
     const { navigationState, setNavigationState } = useNavigation();
     const autoOpenHandled = useRef(false);
+
+    // CSV Import state
+    const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
+    const [csvFile, setCSVFile] = useState(null);
+    const [csvDragOver, setCSVDragOver] = useState(false);
+    const [csvImporting, setCSVImporting] = useState(false);
+    const [csvResult, setCSVResult] = useState(null);
+    const csvFileInputRef = useRef(null);
     const [stats, setStats] = useState({
         totalTransactions: 0,
         stockIn: 0,
@@ -156,13 +165,23 @@ const MovementTransactions = () => {
 
     const getDepotActivityData = () => {
         const depotActivity = {};
+        const validDepotNames = new Set(depots.map(d => d.name));
         
         transactions.forEach(tx => {
-            const depotName = tx.toDepot || tx.fromDepot || 'Unknown';
-            if (!depotActivity[depotName]) {
-                depotActivity[depotName] = 0;
+            // Count activity accurately for both source and destination without exposing deleted depots
+            if (tx.transactionType === 'transfer') {
+                if (tx.fromDepot && validDepotNames.has(tx.fromDepot)) {
+                    depotActivity[tx.fromDepot] = (depotActivity[tx.fromDepot] || 0) + 1;
+                }
+                if (tx.toDepot && validDepotNames.has(tx.toDepot)) {
+                    depotActivity[tx.toDepot] = (depotActivity[tx.toDepot] || 0) + 1;
+                }
+            } else {
+                const depotName = tx.toDepot || tx.fromDepot;
+                if (depotName && validDepotNames.has(depotName)) {
+                    depotActivity[depotName] = (depotActivity[depotName] || 0) + 1;
+                }
             }
-            depotActivity[depotName]++;
         });
 
         return Object.entries(depotActivity)
@@ -210,6 +229,50 @@ const MovementTransactions = () => {
         }
     };
 
+    // ─── CSV Import Handlers ────────────────────────────────────────────────
+    const handleCSVFileDrop = (e) => {
+        e.preventDefault();
+        setCSVDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.csv')) {
+            setCSVFile(file);
+            setCSVResult(null);
+        }
+    };
+
+    const handleCSVFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setCSVFile(file);
+            setCSVResult(null);
+        }
+    };
+
+    const handleImportCSV = async () => {
+        if (!csvFile) return;
+        setCSVImporting(true);
+        setCSVResult(null);
+        try {
+            const text = await csvFile.text();
+            const result = await api.importTransactionsCSV(text);
+            setCSVResult({ type: 'success', ...result });
+            if (result.success > 0) fetchData();
+        } catch (err) {
+            const msg = err?.response?.data?.message || err.message || 'Import failed';
+            setCSVResult({ type: 'error', message: msg, errors: err?.response?.data?.errors || [] });
+        } finally {
+            setCSVImporting(false);
+        }
+    };
+
+    const closeCSVModal = () => {
+        setIsCSVModalOpen(false);
+        setCSVFile(null);
+        setCSVResult(null);
+        setCSVDragOver(false);
+    };
+
+    // ────────────────────────────────────────────────────────────────────────
     const handleExportCSV = () => {
         const headers = ['Date', 'Type', 'Product', 'SKU', 'Quantity', 'From', 'To', 'Reason', 'Performed By'];
         const rows = filteredTransactions.map(tx => [
@@ -242,6 +305,157 @@ const MovementTransactions = () => {
 
     return (
         <div className="movement-transactions-container">
+
+            {/* ── CSV Import Modal ───────────────────────────────────────────── */}
+            {isCSVModalOpen && (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeCSVModal()}>
+                    <div className="csv-import-modal">
+                        {/* Header */}
+                        <div className="csv-modal-header">
+                            <div className="csv-modal-title">
+                                <div className="csv-modal-icon">
+                                    <Upload size={22} />
+                                </div>
+                                <div>
+                                    <h2>Import Transactions via CSV</h2>
+                                    <p>Upload a .csv file to bulk-import transactions</p>
+                                </div>
+                            </div>
+                            <button className="close-btn" onClick={closeCSVModal}>
+                                <X size={22} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="csv-modal-body">
+
+                            {/* Format reference */}
+                            <div className="csv-format-info">
+                                <div className="csv-format-label">
+                                    <Info size={14} />
+                                    <span>Required CSV column headers</span>
+                                </div>
+                                <div className="csv-format-columns">
+                                    {['transactionType', 'productName', 'productSku', 'quantity', 'fromDepot', 'toDepot', 'reason', 'notes', 'timestamp'].map(col => (
+                                        <span key={col} className="csv-col-badge">{col}</span>
+                                    ))}
+                                </div>
+                                <div className="csv-format-notes">
+                                    <span><strong>transactionType</strong>: stock-in | stock-out | transfer | adjustment</span>
+                                    <span><strong>timestamp</strong> is optional (defaults to now)</span>
+                                    <span>Match depots by exact name as stored in the system</span>
+                                </div>
+                            </div>
+
+                            {/* Drop Zone */}
+                            <div
+                                className={`csv-drop-zone ${csvDragOver ? 'drag-over' : ''} ${csvFile ? 'file-selected' : ''}`}
+                                onDragOver={(e) => { e.preventDefault(); setCSVDragOver(true); }}
+                                onDragLeave={() => setCSVDragOver(false)}
+                                onDrop={handleCSVFileDrop}
+                                onClick={() => !csvFile && csvFileInputRef.current?.click()}
+                            >
+                                <input
+                                    ref={csvFileInputRef}
+                                    type="file"
+                                    accept=".csv,text/csv"
+                                    style={{ display: 'none' }}
+                                    onChange={handleCSVFileSelect}
+                                />
+                                {csvFile ? (
+                                    <div className="csv-file-selected">
+                                        <div className="csv-file-icon">
+                                            <FileText size={36} />
+                                        </div>
+                                        <div className="csv-file-info">
+                                            <span className="csv-file-name">{csvFile.name}</span>
+                                            <span className="csv-file-size">{(csvFile.size / 1024).toFixed(1)} KB</span>
+                                        </div>
+                                        <button
+                                            className="csv-file-remove"
+                                            onClick={(e) => { e.stopPropagation(); setCSVFile(null); setCSVResult(null); }}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="csv-drop-content">
+                                        <div className="csv-drop-icon">
+                                            <Upload size={40} />
+                                        </div>
+                                        <p className="csv-drop-title">Drag & drop your CSV file here</p>
+                                        <p className="csv-drop-sub">or <span className="csv-browse-link">browse to select</span></p>
+                                        <p className="csv-drop-hint">.csv files only</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Result Panel */}
+                            {csvResult && (
+                                <div className={`csv-result-panel ${csvResult.type}`}>
+                                    <div className="csv-result-header">
+                                        {csvResult.type === 'success' ? (
+                                            <CheckCircle size={20} />
+                                        ) : (
+                                            <AlertCircle size={20} />
+                                        )}
+                                        <span>{csvResult.message}</span>
+                                    </div>
+                                    {csvResult.type === 'success' && (
+                                        <div className="csv-result-stats">
+                                            <div className="csv-stat-badge success">
+                                                <CheckCircle size={14} />
+                                                {csvResult.success} imported
+                                            </div>
+                                            {csvResult.failed > 0 && (
+                                                <div className="csv-stat-badge danger">
+                                                    <AlertCircle size={14} />
+                                                    {csvResult.failed} failed
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {csvResult.errors?.length > 0 && (
+                                        <div className="csv-result-errors">
+                                            <p className="csv-errors-title">Row errors:</p>
+                                            <ul>
+                                                {csvResult.errors.map((err, i) => (
+                                                    <li key={i}>{err}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="csv-modal-footer">
+                            <button className="csv-cancel-btn" onClick={closeCSVModal}>
+                                Cancel
+                            </button>
+                            <button
+                                className="csv-import-btn"
+                                onClick={handleImportCSV}
+                                disabled={!csvFile || csvImporting}
+                            >
+                                {csvImporting ? (
+                                    <>
+                                        <div className="csv-spinner" />
+                                        Importing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={16} />
+                                        Import Transactions
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Product Selector Modal */}
             {isProductSelectorOpen && (
                 <div className="modal-overlay">
@@ -529,6 +743,13 @@ const MovementTransactions = () => {
                         <button className="mt-action-btn export" onClick={handleExportCSV}>
                             <Download size={16} />
                             Export CSV
+                        </button>
+                        <button
+                            className="mt-action-btn import-csv"
+                            onClick={() => setIsCSVModalOpen(true)}
+                        >
+                            <Upload size={16} />
+                            Import CSV
                         </button>
                         <button 
                             className="mt-action-btn primary"

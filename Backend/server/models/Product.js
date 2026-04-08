@@ -35,7 +35,7 @@ const productSchema = new mongoose.Schema({
 // Pre-save hook to calculate total stock from depot distribution and update status
 productSchema.pre('save', function (next) {
   // Calculate total stock from all depots
-  if (this.depotDistribution && this.depotDistribution.length > 0) {
+  if (this.depotDistribution) {
     this.stock = this.depotDistribution.reduce((total, depot) => total + (depot.quantity || 0), 0);
   }
 

@@ -128,7 +128,31 @@ export const useDashboardData = () => {
     useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 60000);
-        return () => clearInterval(interval);
+
+        // Listen for cross-page inventory mutation events (e.g. depot bulk-clear)
+        // DepotDetails broadcasts on these channels after mutations succeed.
+        let bc;
+        try {
+            bc = new BroadcastChannel('sangrahak_inventory_sync');
+            bc.onmessage = (event) => {
+                const { type } = event.data || {};
+                if (
+                    type === 'depot:inventory-cleared' ||
+                    type === 'depot:product-removed' ||
+                    type === 'depot:deleted' ||
+                    type === 'inventory:refresh'
+                ) {
+                    fetchData();
+                }
+            };
+        } catch (_) {
+            // BroadcastChannel not supported in this environment — silent fallback
+        }
+
+        return () => {
+            clearInterval(interval);
+            if (bc) bc.close();
+        };
     }, [fetchData]);
 
     // 1-Click Auto-Reorder directly from the Dashboard

@@ -1,0 +1,11 @@
+transactionType,productName,productSku,quantity,fromDepot,toDepot,reason,notes,timestamp
+stock-in,GoPro HERO 11 Black,ELE-001,20,,Animesh's Depot,Restocking from TechSource,Invoice #INV-201,2026-04-01T10:00:00Z
+stock-out,GoPro HERO 11 Black,ELE-001,8,Animesh's Depot,,Online Sale,Order #10045,2026-04-03T14:30:00Z
+stock-in,NVIDIA GeForce RTX 4070,ELE-002,15,,Animesh's Depot,Supplier Delivery,,2026-04-02T11:00:00Z
+stock-out,NVIDIA GeForce RTX 4070,ELE-002,7,Animesh's Depot,,Instore Purchase,Receipt #9921,2026-04-04T16:15:00Z
+stock-in,AMD Ryzen 7 5800X CPU,ELE-003,50,,Animesh's Depot,Bulk Order,,2026-04-01T09:30:00Z
+stock-out,AMD Ryzen 7 5800X CPU,ELE-003,5,Animesh's Depot,,B2B Sale,Client Omega Build,2026-04-05T13:20:00Z
+stock-in,Logitech C920 HD Webcam,ELE-004,150,,Animesh's Depot,Initial Stock,,2026-04-01T08:00:00Z
+stock-out,Logitech C920 HD Webcam,ELE-004,20,Animesh's Depot,,Corporate Order,Zoom setups for new hires,2026-04-06T10:45:00Z
+stock-in,SanDisk 1TB SSD,ELE-005,100,,Animesh's Depot,Restocking,,2026-04-02T10:00:00Z
+adjustment,SanDisk 1TB SSD,ELE-005,5,,,Inventory Audit,Found 5 defective units during count,2026-04-07T09:00:00Z

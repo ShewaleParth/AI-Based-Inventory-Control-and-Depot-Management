@@ -1,0 +1,72 @@
+{
+  "users": [
+    {
+      "id": "69af0deb9267ba92dd4042b3",
+      "email": "sparth7972@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "69af1478a536433c69a2083f",
+      "email": "sphantom3024@gmail.com",
+      "role": "viewer"
+    },
+    {
+      "id": "69affdf32996e82831e975e2",
+      "email": "abhishek.ap2003@gmail.com",
+      "role": "staff"
+    },
+    {
+      "id": "69b4112cc888c2cf4d55fef5",
+      "email": "parthshewale2223@ternaengg.ac.in",
+      "role": "admin"
+    },
+    {
+      "id": "69b41358532f1df6b383ecaf",
+      "email": "pawsheayush83@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "69b539e8342cdaf1177f4706",
+      "email": "luckyak619@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "69b6a8614f5aace584ed71b8",
+      "email": "animeshkarmakar992@gmail.com",
+      "role": "staff"
+    },
+    {
+      "id": "69b82e59c4d77d231288de08",
+      "email": "ayushpawshe2223@ternaengg.ac.in",
+      "role": "staff"
+    },
+    {
+      "id": "69ba7a58329924c155520b2e",
+      "email": "animeshkarmakar455@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "69bd92ba933803446264d6a9",
+      "email": "abc@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "69bd930a933803446264d79e",
+      "email": "yibixa1736@pazard.com",
+      "role": "admin"
+    }
+  ],
+  "ele001_userId": "69af0deb9267ba92dd4042b3",
+  "all_ele001": [
+    {
+      "name": "GoPro HERO 11 Black",
+      "userId": "69af0deb9267ba92dd4042b3",
+      "stock": 192
+    },
+    {
+      "name": "GoPro HERO 11 Black",
+      "userId": "69affdf32996e82831e975e2",
+      "stock": 12
+    }
+  ]
+}

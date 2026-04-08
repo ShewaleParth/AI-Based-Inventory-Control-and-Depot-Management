@@ -415,4 +415,252 @@ router.post('/generate-activity', async (req, res, next) => {
   }
 });
 
+// POST - Import transactions from CSV
+// Expected CSV columns (case-insensitive):
+//   transactionType, productName, productSku, quantity, fromDepot, toDepot, reason, notes, timestamp
+router.post('/import-csv', requirePermission('transfers:create'), async (req, res, next) => {
+  try {
+    const { csvText } = req.body;
+    if (!csvText || typeof csvText !== 'string') {
+      return res.status(400).json({ message: 'csvText (string) is required in the request body' });
+    }
+
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) {
+      return res.status(400).json({ message: 'CSV must have at least a header row and one data row' });
+    }
+
+    // Parse headers helper
+    const parseCSVLine = (line) => {
+      const row = [];
+      let current = "";
+      let inQuotes = false;
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') inQuotes = !inQuotes;
+        else if (char === ',' && !inQuotes) {
+          row.push(current.trim().replace(/^"|"$/g, ''));
+          current = "";
+        } else current += char;
+      }
+      row.push(current.trim().replace(/^"|"$/g, ''));
+      return row;
+    };
+
+    // Parse headers
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, ''));
+
+    const getCol = (row, name) => {
+      const idx = headers.indexOf(name);
+      return idx >= 0 ? row[idx] : '';
+    };
+
+    const products = await Product.find({ userId: req.organizationId });
+    const depots   = await Depot.find({ userId: req.organizationId });
+
+    const findProduct = (name, sku) => {
+      if (sku) {
+        const bySkuExact = products.find(p => p.sku?.toLowerCase() === sku.toLowerCase());
+        if (bySkuExact) return bySkuExact;
+      }
+      if (name) {
+        return products.find(p => p.name?.toLowerCase() === name.toLowerCase());
+      }
+      return null;
+    };
+
+    const findDepot = (nameStr) => {
+      if (!nameStr) return null;
+      return depots.find(d => d.name?.toLowerCase() === nameStr.toLowerCase()) || null;
+    };
+
+    const validTypes = ['stock-in', 'stock-out', 'transfer', 'adjustment'];
+    const results   = { success: 0, failed: 0, errors: [] };
+    const txsToInsert = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const row = parseCSVLine(lines[i]);
+      const rowNum = i + 1;
+
+      try {
+        const type       = getCol(row, 'transactiontype') || getCol(row, 'type');
+        const pName      = getCol(row, 'productname');
+        const pSku       = getCol(row, 'productsku') || getCol(row, 'sku');
+        const qty        = parseInt(getCol(row, 'quantity'));
+        const fromDepotN = getCol(row, 'fromdepot');
+        const toDepotN   = getCol(row, 'todepot');
+        const reason     = getCol(row, 'reason') || 'CSV Import';
+        const notes      = getCol(row, 'notes') || '';
+        const tsRaw      = getCol(row, 'timestamp');
+
+        // Validate type
+        if (!validTypes.includes(type)) {
+          results.errors.push(`Row ${rowNum}: Unknown transactionType "${type}"`);
+          results.failed++;
+          continue;
+        }
+
+        // Validate quantity
+        if (isNaN(qty) || qty <= 0) {
+          results.errors.push(`Row ${rowNum}: Invalid quantity "${getCol(row, 'quantity')}"`);
+          results.failed++;
+          continue;
+        }
+
+        // Find product
+        const product = findProduct(pName, pSku);
+        if (!product) {
+          results.errors.push(`Row ${rowNum}: Product not found (name="${pName}", sku="${pSku}")`);
+          results.failed++;
+          continue;
+        }
+
+        const previousStock = product.stock;
+        let newStock = previousStock;
+
+        const fromDepot = findDepot(fromDepotN);
+        const toDepot   = findDepot(toDepotN);
+
+        // Build transaction doc
+        const txDoc = {
+          userId:          req.organizationId,
+          productId:       product._id,
+          productName:     product.name,
+          productSku:      product.sku,
+          transactionType: type,
+          quantity:        qty,
+          fromDepot:       fromDepot?.name || fromDepotN || undefined,
+          fromDepotId:     fromDepot?._id  || undefined,
+          toDepot:         toDepot?.name   || toDepotN   || undefined,
+          toDepotId:       toDepot?._id    || undefined,
+          previousStock,
+          newStock,    // will be patched below
+          reason,
+          notes,
+          performedBy: req.userRole === 'admin' ? 'Admin' : 'Employee',
+          timestamp:   tsRaw ? new Date(tsRaw) : new Date()
+        };
+
+        // Update stock levels
+        if (type === 'stock-in') {
+          if (!toDepot) {
+            results.errors.push(`Row ${rowNum}: toDepot required for stock-in`);
+            results.failed++;
+            continue;
+          }
+          const ddIdx = product.depotDistribution.findIndex(
+            d => d.depotId.toString() === toDepot._id.toString()
+          );
+          if (ddIdx >= 0) {
+            product.depotDistribution[ddIdx].quantity += qty;
+          } else {
+            product.depotDistribution.push({
+              depotId: toDepot._id, depotName: toDepot.name, quantity: qty, lastUpdated: new Date()
+            });
+          }
+          await product.save();
+          newStock = product.stock;
+
+          // Update depot
+          const dpIdx = toDepot.products.findIndex(p => p.productId.toString() === product._id.toString());
+          if (dpIdx >= 0) {
+            toDepot.products[dpIdx].quantity += qty;
+          } else {
+            toDepot.products.push({ productId: product._id, productName: product.name, productSku: product.sku, quantity: qty, lastUpdated: new Date() });
+          }
+          toDepot.currentUtilization += qty;
+          toDepot.itemsStored = toDepot.products.length;
+          await toDepot.save();
+
+        } else if (type === 'stock-out') {
+          if (!fromDepot) {
+            results.errors.push(`Row ${rowNum}: fromDepot required for stock-out`);
+            results.failed++;
+            continue;
+          }
+          const ddIdx = product.depotDistribution.findIndex(
+            d => d.depotId.toString() === fromDepot._id.toString()
+          );
+          if (ddIdx < 0 || product.depotDistribution[ddIdx].quantity < qty) {
+            results.errors.push(`Row ${rowNum}: Insufficient stock in depot "${fromDepotN}"`);
+            results.failed++;
+            continue;
+          }
+          product.depotDistribution[ddIdx].quantity -= qty;
+          if (product.depotDistribution[ddIdx].quantity === 0) {
+            product.depotDistribution.splice(ddIdx, 1);
+          }
+          await product.save();
+          newStock = product.stock;
+
+          const dpIdx = fromDepot.products.findIndex(p => p.productId.toString() === product._id.toString());
+          if (dpIdx >= 0) {
+            fromDepot.products[dpIdx].quantity -= qty;
+            if (fromDepot.products[dpIdx].quantity === 0) fromDepot.products.splice(dpIdx, 1);
+          }
+          fromDepot.currentUtilization -= qty;
+          fromDepot.itemsStored = fromDepot.products.length;
+          await fromDepot.save();
+
+        } else if (type === 'transfer') {
+          if (!fromDepot || !toDepot) {
+            results.errors.push(`Row ${rowNum}: Both fromDepot and toDepot required for transfer`);
+            results.failed++;
+            continue;
+          }
+          // deduct from source
+          const srcIdx = product.depotDistribution.findIndex(
+            d => d.depotId.toString() === fromDepot._id.toString()
+          );
+          if (srcIdx < 0 || product.depotDistribution[srcIdx].quantity < qty) {
+            results.errors.push(`Row ${rowNum}: Insufficient stock in source depot "${fromDepotN}"`);
+            results.failed++;
+            continue;
+          }
+          product.depotDistribution[srcIdx].quantity -= qty;
+          if (product.depotDistribution[srcIdx].quantity === 0) product.depotDistribution.splice(srcIdx, 1);
+          // add to dest
+          const dstIdx = product.depotDistribution.findIndex(
+            d => d.depotId.toString() === toDepot._id.toString()
+          );
+          if (dstIdx >= 0) {
+            product.depotDistribution[dstIdx].quantity += qty;
+          } else {
+            product.depotDistribution.push({ depotId: toDepot._id, depotName: toDepot.name, quantity: qty, lastUpdated: new Date() });
+          }
+          await product.save();
+          newStock = product.stock;
+        }
+        // adjustment: no stock change, just record
+        else if (type === 'adjustment') {
+          newStock = previousStock;
+        }
+
+        txDoc.newStock = newStock;
+        txsToInsert.push(txDoc);
+        results.success++;
+
+        // Trigger alert check
+        await createStockAlert(product, req.organizationId).catch(() => {});
+
+      } catch (rowErr) {
+        results.errors.push(`Row ${rowNum}: ${rowErr.message}`);
+        results.failed++;
+      }
+    }
+
+    if (txsToInsert.length > 0) {
+      await Transaction.insertMany(txsToInsert);
+    }
+
+    res.status(200).json({
+      message: `CSV import complete. ${results.success} succeeded, ${results.failed} failed.`,
+      ...results
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
+
