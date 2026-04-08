@@ -35,13 +35,34 @@ const StockSearchTracking = () => {
 
     useEffect(() => {
         fetchData();
+
+        // Auto-refresh when depot operations mutate inventory in another tab/view
+        let bc;
+        try {
+            bc = new BroadcastChannel('sangrahak_inventory_sync');
+            bc.onmessage = (event) => {
+                const { type } = event.data || {};
+                if (
+                    type === 'depot:inventory-cleared' ||
+                    type === 'depot:product-removed' ||
+                    type === 'depot:deleted' ||
+                    type === 'inventory:refresh'
+                ) {
+                    fetchData();
+                }
+            };
+        } catch (_) {
+            // BroadcastChannel not supported — silent fallback
+        }
+
+        return () => { if (bc) bc.close(); };
     }, []);
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const [productsData, depotsData] = await Promise.all([
-                api.getProducts({ limit: 1000 }),
+                api.getProducts({ limit: 1000, hideZeroStock: true }),
                 api.getDepots()
             ]);
 

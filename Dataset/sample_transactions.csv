@@ -1,0 +1,6 @@
+transactionType,productName,productSku,quantity,fromDepot,toDepot,reason,notes,timestamp
+stock-in,EcoFriendly Water Bottle,BOT-001,150,,Main Depot,Initial supplier delivery,New stock arrival,2026-04-08T10:00:00Z
+stock-out,Ergonomic Office Chair,CHR-002,5,Main Depot,,Retail sale,Invoice #1024,2026-04-08T11:30:00Z
+transfer,Wireless Keyboard,KB-003,20,Main Depot,Downtown Depot,Rebalancing inventory,Low stock in Downtown,2026-04-08T14:15:00Z
+adjustment,Noise Cancelling Headphones,HD-004,2,Main Depot,,Damaged goods,Found broken during audit,2026-04-08T09:00:00Z
+stock-in,Stainless Steel Mug,MUG-005,50,,North Depot,Restock,,

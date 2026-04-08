@@ -15,16 +15,16 @@ router.get('/stats', async (req, res, next) => {
 
     // Fetch all counts in parallel for performance
     const [totalProducts, lowStockCount, outOfStockCount, totalDepots] = await Promise.all([
-      Product.countDocuments({ userId }),
-      Product.countDocuments({ userId, status: 'low-stock' }),
-      Product.countDocuments({ userId, status: 'out-of-stock' }),
+      Product.countDocuments({ userId, stock: { $gt: 0 } }),
+      Product.countDocuments({ userId, status: 'low-stock', stock: { $gt: 0 } }),
+      Product.countDocuments({ userId, status: 'out-of-stock' }), // out-of-stock technically is 0, but if we don't count it towards total we wouldn't show it as active
       Depot.countDocuments({ userId })
     ]);
 
-    console.log(`[DASHBOARD] Found: ${totalProducts} products, ${lowStockCount} low stock`);
+    console.log(`[DASHBOARD] Found: ${totalProducts} active products, ${lowStockCount} low stock`);
 
-    // Calculate inventory value and category counts from all products
-    const userProducts = await Product.find({ userId }).select('price stock _id category');
+    // Calculate inventory value and category counts from active products
+    const userProducts = await Product.find({ userId, stock: { $gt: 0 } }).select('price stock _id category');
     const totalValue = userProducts.reduce((sum, p) => sum + ((p.price || 0) * (p.stock || 0)), 0);
 
     const categoryDistribution = {
@@ -92,8 +92,8 @@ router.get('/top-skus', async (req, res, next) => {
   try {
     const userId = req.organizationId;
 
-    // Fetch all products with fields needed for risk calculation
-    const products = await Product.find({ userId })
+    // Fetch active products with fields needed for risk calculation
+    const products = await Product.find({ userId, stock: { $gt: 0 } })
       .select('_id sku name stock category reorderPoint dailySales weeklySales leadTime price status depotDistribution')
       .lean();
 

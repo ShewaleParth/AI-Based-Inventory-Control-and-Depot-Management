@@ -16,9 +16,13 @@ const { paginate } = require('../utils/queryBuilder');
 // GET all products
 router.get('/', async (req, res, next) => {
   try {
-    const { search, category, status, location, ...restQuery } = req.query;
+    const { search, category, status, location, hideZeroStock, ...restQuery } = req.query;
 
     const query = { userId: req.organizationId, ...restQuery };
+
+    if (hideZeroStock === 'true') {
+      query.stock = { $gt: 0 };
+    }
 
     if (location) {
       query.location = location;

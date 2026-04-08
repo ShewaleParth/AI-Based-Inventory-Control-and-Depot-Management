@@ -4,7 +4,6 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const http = require('http');
-const socketio = require('socket.io');
 
 // Configuration
 const config = require('./config/env');
@@ -41,13 +40,8 @@ config.validateEnv();
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Socket.IO
-const io = socketio(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+
+
 
 // Middleware
 app.use(cors({
@@ -131,17 +125,8 @@ v1Router.use('/chatbot', authenticateToken, chatbotRoutes);
 // Mount the v1 API routes
 app.use('/api/v1', v1Router);
 
-// WebSocket connection handling
-io.on('connection', (socket) => {
-  console.log(' New client connected:', socket.id);
 
-  socket.on('disconnect', () => {
-    console.log(' Client disconnected:', socket.id);
-  });
-});
 
-// Make io accessible to routes if needed
-app.set('io', io);
 
 // ── Pattern 2.1 Test Route ──────────────────────────
 const { AppError, asyncWrap } = require('./middleware/errorHandler');
@@ -185,4 +170,4 @@ server.listen(PORT, () => {
   console.log(` Environment: ${config.NODE_ENV}\n`);
 });
 
-module.exports = { app, server, io };
+module.exports = { app, server };

@@ -4,7 +4,7 @@ import { Search, Plus, Filter, ChevronDown, MoreHorizontal, Grid, List, Trending
 import { api } from '../utils/api';
 import ForecastModal from '../components/ForecastModal';
 
-const AddItemModal = ({ isOpen, onClose, onAdd, depots }) => {
+const AddItemModal = ({ isOpen, onClose, onAdd, depots, isSubmitting }) => {
     const [formData, setFormData] = useState({
         name: '',
         sku: '',
@@ -26,10 +26,10 @@ const AddItemModal = ({ isOpen, onClose, onAdd, depots }) => {
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onAdd(formData);
-        onClose();
+        await onAdd(formData);
+        // Form clears and modal closes after successful addition via parent
         setFormData({ name: '', sku: '', category: 'Sneakers', price: '', stock: '', size: '38 - 49', brand: 'Nike', supplier: 'Default Supplier', depotId: '', image: '' });
     };
 
@@ -120,7 +120,14 @@ const AddItemModal = ({ isOpen, onClose, onAdd, depots }) => {
                             </div>
                         </div>
                     </div>
-                    <button type="submit" className="submit-btn-purple">Create Item</button>
+                    <button type="submit" className="submit-btn-purple" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div> 
+                                Creating...
+                            </span>
+                        ) : 'Create Item'}
+                    </button>
                 </form>
             </div>
         </div>
@@ -132,6 +139,7 @@ const InventoryOverview = () => {
     const [expandedRow, setExpandedRow] = useState(null);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [depots, setDepots] = useState([]);
@@ -156,6 +164,7 @@ const InventoryOverview = () => {
             const params = {
                 page,
                 limit,
+                hideZeroStock: true, // Specifically hide zero-quantity items per user request
                 ...(searchQuery && { search: searchQuery }),
                 ...(selectedCategory !== 'All' && { category: selectedCategory }),
             };
@@ -216,7 +225,30 @@ const InventoryOverview = () => {
         fetchData(1, itemsPerPage);
     }, [searchQuery, selectedCategory, itemsPerPage]);
 
+    // Listen for cross-page inventory mutation broadcasts from DepotDetails
+    useEffect(() => {
+        let bc;
+        try {
+            bc = new BroadcastChannel('sangrahak_inventory_sync');
+            bc.onmessage = (event) => {
+                const { type } = event.data || {};
+                if (
+                    type === 'depot:inventory-cleared' ||
+                    type === 'depot:product-removed' ||
+                    type === 'depot:deleted' ||
+                    type === 'inventory:refresh'
+                ) {
+                    fetchData(1, itemsPerPage);
+                }
+            };
+        } catch (_) {
+            // BroadcastChannel not supported — silent fallback
+        }
+        return () => { if (bc) bc.close(); };
+    }, [itemsPerPage]);
+
     const handleAddProduct = async (newProduct) => {
+        setIsCreating(true);
         try {
             if (!newProduct.depotId) {
                 alert('Please select a storage depot.');
@@ -237,6 +269,8 @@ const InventoryOverview = () => {
         } catch (error) {
             console.error('Failed to add product:', error);
             alert(`Error: ${error.response?.data?.message || error.message}`);
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -380,6 +414,7 @@ const InventoryOverview = () => {
                 onClose={() => setIsModalOpen(false)}
                 onAdd={handleAddProduct}
                 depots={depots}
+                isSubmitting={isCreating}
             />
 
             {isEditModalOpen && (

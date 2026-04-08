@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useMemo } from 'react';
 
 const SupplierRiskContext = createContext(null);
 
@@ -25,8 +25,9 @@ function reducer(state, action) {
 
 export function SupplierRiskProvider({ children }) {
     const [state, dispatch] = useReducer(reducer, initialState);
+    const value = React.useMemo(() => ({ state, dispatch }), [state, dispatch]);
     return (
-        <SupplierRiskContext.Provider value={{ state, dispatch }}>
+        <SupplierRiskContext.Provider value={value}>
             {children}
         </SupplierRiskContext.Provider>
     );

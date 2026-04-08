@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Warehouse, MapPin, Package, TrendingUp, AlertTriangle, Activity, Calendar } from 'lucide-react';
+import { ArrowLeft, Warehouse, MapPin, Package, TrendingUp, AlertTriangle, Activity, Calendar, Trash2 } from 'lucide-react';
 import { api } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const DepotDetails = ({ depotId, onBack }) => {
+    const { isAdmin } = useAuth();
     const [depot, setDepot] = useState(null);
     const [products, setProducts] = useState([]);
     const [recentMovements, setRecentMovements] = useState([]);
@@ -31,6 +33,52 @@ const DepotDetails = ({ depotId, onBack }) => {
             console.error('Error fetching depot details:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const broadcastSync = (type, payload = {}) => {
+        try {
+            const bc = new BroadcastChannel('sangrahak_inventory_sync');
+            bc.postMessage({ type, ...payload });
+            bc.close();
+        } catch (_) {
+            // BroadcastChannel not supported in this environment
+        }
+    };
+
+    const handleClearInventory = async () => {
+        if (!window.confirm(`Are you sure you want to permanently remove ALL inventory from ${depot.name}?\n\nProducts whose entire stock was in this depot will be permanently deleted from inventory.\nThis cannot be undone.`)) return;
+        
+        try {
+            const result = await api.clearDepotInventory(depotId);
+            broadcastSync('depot:inventory-cleared', { depotId });
+            fetchDepotDetails(); // Refresh
+
+            // Inform the user if products were fully deleted
+            const deleted = result?.autoDeletedProducts || 0;
+            if (deleted > 0) {
+                alert(`✅ Cleared successfully.\n\n${deleted} product(s) had all their stock in this depot and have been permanently removed from inventory.`);
+            }
+        } catch (error) {
+            console.error('Error clearing inventory:', error);
+            alert(error.response?.data?.message || 'Failed to clear inventory');
+        }
+    };
+
+    const handleRemoveProduct = async (sku, productName) => {
+        if (!window.confirm(`Remove all units of "${productName}" (${sku}) from this depot?\n\nIf this is the product's only depot, it will be permanently deleted from inventory.`)) return;
+
+        try {
+            const result = await api.removeProductFromDepot(depotId, sku);
+            broadcastSync('depot:product-removed', { depotId, productSku: sku });
+            fetchDepotDetails(); // Refresh
+
+            if (result?.productAutoDeleted) {
+                alert(`✅ "${productName}" has been permanently removed from inventory (zero stock across all depots).`);
+            }
+        } catch (error) {
+            console.error('Error removing product:', error);
+            alert(error.response?.data?.message || 'Failed to remove product');
         }
     };
 
@@ -248,13 +296,20 @@ const DepotDetails = ({ depotId, onBack }) => {
             <div className="inventory-section">
                 <div className="section-header">
                     <h2><Package size={20} /> Inventory ({depot.itemsStored} SKUs)</h2>
-                    <input
-                        type="text"
-                        placeholder="Search by SKU or name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-input"
-                    />
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <input
+                            type="text"
+                            placeholder="Search by SKU or name..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="search-input"
+                        />
+                        {isAdmin && products.length > 0 && (
+                            <button className="delete-depot-btn" onClick={handleClearInventory} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#fee2e2', color: '#ef4444', border: '1px solid #f87171', borderRadius: '0.5rem', fontWeight: 600 }}>
+                                <Trash2 size={16} /> Clear All
+                            </button>
+                        )}
+                    </div>
                 </div>
                 <div className="inventory-table-container">
                     <table className="inventory-table enhanced">
@@ -268,6 +323,7 @@ const DepotDetails = ({ depotId, onBack }) => {
                                 <th>Days in Stock</th>
                                 <th>Status</th>
                                 <th>Last Updated</th>
+                                {isAdmin && <th>Actions</th>}
                             </tr>
                         </thead>
                         <tbody>
@@ -293,12 +349,23 @@ const DepotDetails = ({ depotId, onBack }) => {
                                                 </span>
                                             </td>
                                             <td>{new Date(item.lastUpdated).toLocaleDateString()}</td>
+                                            {isAdmin && (
+                                                <td>
+                                                    <button 
+                                                        onClick={() => handleRemoveProduct(item.sku, item.productName)}
+                                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.25rem' }}
+                                                        title="Remove product from depot"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </td>
+                                            )}
                                         </tr>
                                     );
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>
+                                    <td colSpan={isAdmin ? "9" : "8"} style={{ textAlign: 'center', padding: '2rem' }}>
                                         {searchTerm ? 'No products match your search' : 'No inventory in this depot'}
                                     </td>
                                 </tr>

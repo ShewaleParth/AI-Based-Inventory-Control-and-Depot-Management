@@ -13,8 +13,12 @@ export const NavigationProvider = ({ children }) => {
         setActiveItem(item);
     };
 
+    const value = React.useMemo(() => ({
+        activeItem, setActiveItem, navigationState, setNavigationState, navigateTo
+    }), [activeItem, navigationState]);
+
     return (
-        <NavigationContext.Provider value={{ activeItem, setActiveItem, navigationState, setNavigationState, navigateTo }}>
+        <NavigationContext.Provider value={value}>
             {children}
         </NavigationContext.Provider>
     );
