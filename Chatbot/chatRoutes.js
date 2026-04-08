@@ -11,8 +11,6 @@ const { randomUUID } = require('crypto');
 const uuidv4 = () => randomUUID();
 const {
   processMessage,
-  confirmPendingAction,
-  cancelPendingAction,
   getChatHistory,
   listUserSessions,
   clearChatHistory,
@@ -21,7 +19,7 @@ const {
 
 /**
  * POST /api/v1/chatbot/chat
- * Send a message and get an AI response (may include tool executions)
+ * Send a message and get an AI response
  */
 router.post('/chat', async (req, res) => {
   try {
@@ -37,6 +35,7 @@ router.post('/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message too long (max 2000 chars)', code: 'MESSAGE_TOO_LONG' });
     }
 
+    // Use provided sessionId or generate a new one
     const resolvedSessionId = sessionId || uuidv4();
 
     const result = await processMessage(message.trim(), resolvedSessionId, { _id: userId, organizationId });
@@ -45,9 +44,7 @@ router.post('/chat', async (req, res) => {
       success: true,
       reply: result.reply,
       sessionId: result.sessionId,
-      timestamp: result.timestamp,
-      actionsLog: result.actionsLog || [],
-      hasPendingAction: result.hasPendingAction || false
+      timestamp: result.timestamp
     });
   } catch (error) {
     console.error('[Chatbot] /chat error:', error.message);
@@ -57,63 +54,6 @@ router.post('/chat', async (req, res) => {
     }
 
     res.status(500).json({ error: 'Failed to process message', code: 'CHAT_ERROR', details: error.message });
-  }
-});
-
-/**
- * POST /api/v1/chatbot/action/confirm
- * Confirm and execute a pending agent action
- */
-router.post('/action/confirm', async (req, res) => {
-  try {
-    const { sessionId } = req.body;
-    const userId = req.userId;
-    const organizationId = req.organizationId;
-
-    if (!sessionId) {
-      return res.status(400).json({ error: 'sessionId is required', code: 'MISSING_SESSION_ID' });
-    }
-
-    const result = await confirmPendingAction(sessionId, { _id: userId, organizationId });
-
-    res.json({
-      success: true,
-      reply: result.reply,
-      sessionId: result.sessionId,
-      timestamp: result.timestamp,
-      actionsLog: result.actionsLog || []
-    });
-  } catch (error) {
-    console.error('[Chatbot] /action/confirm error:', error.message);
-    res.status(500).json({ error: 'Failed to confirm action', code: 'CONFIRM_ERROR', details: error.message });
-  }
-});
-
-/**
- * POST /api/v1/chatbot/action/cancel
- * Cancel a pending agent action without executing it
- */
-router.post('/action/cancel', async (req, res) => {
-  try {
-    const { sessionId } = req.body;
-    const userId = req.userId;
-    const organizationId = req.organizationId;
-
-    if (!sessionId) {
-      return res.status(400).json({ error: 'sessionId is required', code: 'MISSING_SESSION_ID' });
-    }
-
-    const result = await cancelPendingAction(sessionId, { _id: userId, organizationId });
-
-    res.json({
-      success: result.success,
-      reply: result.reply,
-      sessionId,
-      timestamp: result.timestamp
-    });
-  } catch (error) {
-    console.error('[Chatbot] /action/cancel error:', error.message);
-    res.status(500).json({ error: 'Failed to cancel action', code: 'CANCEL_ERROR' });
   }
 });
 
@@ -159,7 +99,7 @@ router.get('/sessions', async (req, res) => {
 router.delete('/history', async (req, res) => {
   try {
     const { sessionId } = req.body;
-    const userId = req.userId;
+    const userId = req.user._id;
 
     if (!sessionId) {
       return res.status(400).json({ error: 'sessionId is required', code: 'MISSING_SESSION_ID' });
@@ -180,7 +120,7 @@ router.delete('/history', async (req, res) => {
 router.delete('/session', async (req, res) => {
   try {
     const { sessionId } = req.body;
-    const userId = req.userId;
+    const userId = req.user._id;
 
     if (!sessionId) {
       return res.status(400).json({ error: 'sessionId is required', code: 'MISSING_SESSION_ID' });

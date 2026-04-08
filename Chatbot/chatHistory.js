@@ -13,21 +13,6 @@ const messageSchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now
-  },
-  // Agentic metadata — stores tool execution logs per message
-  metadata: {
-    actionsLog: [
-      {
-        toolName: String,
-        params: mongoose.Schema.Types.Mixed,
-        success: Boolean,
-        message: String,
-        timestamp: String
-      }
-    ],
-    hasPendingAction: { type: Boolean, default: false },
-    confirmed: { type: Boolean, default: false },
-    iterationsUsed: Number
   }
 });
 
@@ -51,11 +36,6 @@ const chatSessionSchema = new mongoose.Schema({
   title: {
     type: String,
     default: 'New Chat'
-  },
-  // Stores serialised pending action (JSON string) awaiting user confirmation
-  pendingAction: {
-    type: String,
-    default: null
   },
   createdAt: {
     type: Date,
