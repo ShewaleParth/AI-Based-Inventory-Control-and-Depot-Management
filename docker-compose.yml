@@ -22,6 +22,8 @@ services:
       - ./Backend/server/.env
     networks:
       - ai-network
+    volumes:
+      - backend-reports:/app/reports
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -46,3 +48,6 @@ services:
 networks:
   ai-network:
     driver: bridge
+
+volumes:
+  backend-reports:
