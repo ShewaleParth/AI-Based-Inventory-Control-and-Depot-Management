@@ -64,13 +64,14 @@ target_encoders = None
 arima_models = None
 
 # Model paths - Relative configuration
-# BASE_PATH is the parent directory of this file (Major-/Backend)
+# BASE_PATH = .../Backend  (parent of the 'code' directory)
+# Models live in Backend/Models/
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODELS_ROOT = os.path.join(os.path.dirname(BASE_PATH), "Models")
+MODELS_ROOT = os.path.join(BASE_PATH, "Models")  # Fixed: was dirname(BASE_PATH) which pointed to project root
 JSON_MODEL_PATH = os.path.join(MODELS_ROOT, "ml_stock_priority_model.json")
 PKL_MODEL_PATH = os.path.join(MODELS_ROOT, "ml_stock_priority_model.pkl")
 ENCODERS_PATH = os.path.join(MODELS_ROOT, "target_label_encoders.pkl")
-# ARIMA_PATH = os.path.join(BASE_PATH, "Models", "arima_models_dict.pkl") # 2GB file - skip loading to avoid hang
+# ARIMA_PATH = os.path.join(MODELS_ROOT, "arima_models_dict.pkl") # 2GB file - skip loading to avoid hang
 
 
 def load_models():
