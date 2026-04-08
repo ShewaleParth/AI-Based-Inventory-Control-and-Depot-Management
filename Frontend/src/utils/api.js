@@ -193,6 +193,7 @@ export const api = {
     },
 
     // Python AI Backend
+    // Note: pythonApi baseURL is '/ml-api' which Vite proxy rewrites to 'http://127.0.0.1:5001/api/ml'
     predictCustom: async (data) => {
         const response = await pythonApi.post('/predict/custom', data);
         return response.data;
@@ -203,15 +204,30 @@ export const api = {
         return response.data;
     },
 
+    // Health check for Flask AI server — uses /ml-api proxy (→ /api/ml/health doesn't exist on Flask)
+    // Flask health is at /api/health — call it directly via axios since there's no proxy rule for it
     getAIStatus: async () => {
-        const response = await pythonApi.get('/status');
+        const response = await axios.get('http://localhost:5001/api/health');
         return response.data;
     },
 
-    getForecastBySku: async (sku) => {
-        const response = await pythonApi.get(`/forecast/${sku}`);
+    // Get AI products list from Python
+    getAIProducts: async () => {
+        const response = await pythonApi.get('/products');
         return response.data;
     },
+
+    // Supplier Risk — uses /supplier-api proxy (→ Flask /api/supplier/*)
+    getSupplierRiskOverview: async () => {
+        const response = await axios.get('/supplier-api/risk-overview');
+        return response.data;
+    },
+
+    getSupplierKPIs: async () => {
+        const response = await axios.get('/supplier-api/kpis');
+        return response.data;
+    },
+
 
     // Reports API
     getReportStats: async () => {

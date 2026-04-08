@@ -2,7 +2,13 @@ import { useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useSupplierRisk } from '../context/SupplierRiskContext';
 
-const FLASK = import.meta.env.VITE_FLASK_URL || 'http://localhost:5001';
+// All supplier API calls go through the Vite proxy:
+//   /supplier-api/* → http://localhost:5001/api/supplier/*
+// This avoids direct cross-origin requests and browser CORS preflight issues.
+// To override (e.g. production), set VITE_FLASK_URL env variable.
+const SUPPLIER_BASE = import.meta.env.VITE_FLASK_URL
+  ? `${import.meta.env.VITE_FLASK_URL}/api/supplier`
+  : '/supplier-api';
 const POLL_MS = 30_000;
 
 export function useSupplierData() {
@@ -12,8 +18,8 @@ export function useSupplierData() {
     const fetchAll = useCallback(async () => {
         try {
             const [suppRes, kpiRes] = await Promise.all([
-                axios.get(`${FLASK}/api/supplier/risk-overview`),
-                axios.get(`${FLASK}/api/supplier/kpis`),
+                axios.get(`${SUPPLIER_BASE}/risk-overview`),
+                axios.get(`${SUPPLIER_BASE}/kpis`),
             ]);
             dispatch({ type: 'SET_SUPPLIERS', payload: suppRes.data });
             dispatch({ type: 'SET_KPIS', payload: kpiRes.data });
