@@ -4,6 +4,7 @@ const depotSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
   location: { type: String, required: true },
+  pincode: { type: String, default: '' },
   capacity: { type: Number, required: true },
   currentUtilization: { type: Number, default: 0 },
   lat: { type: Number, default: null },

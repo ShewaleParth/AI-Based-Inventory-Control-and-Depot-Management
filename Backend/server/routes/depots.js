@@ -16,6 +16,7 @@ router.get('/', async (req, res, next) => {
         id: depot._id,
         name: depot.name,
         location: depot.location,
+        pincode: depot.pincode,
         capacity: depot.capacity,
         currentUtilization: depot.currentUtilization,
         itemsStored: depot.itemsStored,
@@ -35,12 +36,13 @@ router.get('/', async (req, res, next) => {
 // POST - Create depot (MANAGER + ADMIN)
 router.post('/', requirePermission('depots:manage'), async (req, res, next) => {
   try {
-    const { name, location, capacity, lat, lng } = req.body;
+    const { name, location, pincode, capacity, lat, lng } = req.body;
 
     const depot = new Depot({
       userId: req.organizationId,
       name,
       location,
+      pincode: pincode || '',
       capacity,
       lat: lat || null,
       lng: lng || null,
@@ -82,6 +84,37 @@ router.patch('/:id/coordinates', requirePermission('depots:manage'), async (req,
     }
 
     res.json({ message: 'Coordinates updated', lat: depot.lat, lng: depot.lng });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT - Update depot details (MANAGER + ADMIN)
+router.put('/:id', requirePermission('depots:manage'), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, location, pincode, capacity } = req.body;
+
+    const updateFields = { updatedAt: new Date() };
+    if (name !== undefined) updateFields.name = name;
+    if (location !== undefined) updateFields.location = location;
+    if (pincode !== undefined) updateFields.pincode = pincode;
+    if (capacity !== undefined) updateFields.capacity = capacity;
+
+    const depot = await Depot.findOneAndUpdate(
+      { _id: id, userId: req.organizationId },
+      updateFields,
+      { new: true }
+    );
+
+    if (!depot) {
+      return res.status(404).json({ message: 'Depot not found' });
+    }
+
+    res.json({
+      message: 'Depot updated successfully',
+      depot
+    });
   } catch (error) {
     next(error);
   }
@@ -138,6 +171,7 @@ router.get('/:depotId/details', async (req, res, next) => {
         id: depot._id,
         name: depot.name,
         location: depot.location,
+        pincode: depot.pincode,
         capacity: depot.capacity,
         currentUtilization: depot.currentUtilization,
         itemsStored: depot.itemsStored || depot.products.length,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Warehouse, MapPin, BarChart3, Package, ShieldCheck, AlertTriangle, Search, Plus, ExternalLink, X, Trash2, Lock, Eye } from 'lucide-react';
+import { Warehouse, MapPin, BarChart3, Package, ShieldCheck, AlertTriangle, Search, Plus, ExternalLink, X, Trash2, Lock, Eye, Edit } from 'lucide-react';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import DepotDetails from './DepotDetails';
@@ -8,6 +8,7 @@ const AddDepotModal = ({ isOpen, onClose, onAdd }) => {
     const [formData, setFormData] = useState({
         name: '',
         location: '',
+        pincode: '',
         capacity: 10000,
         currentUtilization: 0,
         itemsStored: 0
@@ -39,6 +40,10 @@ const AddDepotModal = ({ isOpen, onClose, onAdd }) => {
                         <input type="text" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. Karnataka, India" />
                     </div>
                     <div className="form-group">
+                        <label>Pincode</label>
+                        <input type="text" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} placeholder="e.g. 560001" />
+                    </div>
+                    <div className="form-group">
                         <label>Total Capacity (Units)</label>
                         <input type="number" required value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: e.target.value })} placeholder="10000" />
                     </div>
@@ -49,7 +54,66 @@ const AddDepotModal = ({ isOpen, onClose, onAdd }) => {
     );
 };
 
-const DepotCard = ({ depot, onViewDetails, onDelete, canWrite, userIsAdmin }) => {
+const EditDepotModal = ({ isOpen, onClose, onEdit, depotBase }) => {
+    const [formData, setFormData] = useState({
+        name: depotBase?.name || '',
+        location: depotBase?.location || '',
+        pincode: depotBase?.pincode || '',
+        capacity: depotBase?.capacity || 10000
+    });
+
+    useEffect(() => {
+        if (depotBase) {
+            // eslint-disable-next-line
+            setFormData({
+                name: depotBase.name || '',
+                location: depotBase.location || '',
+                pincode: depotBase.pincode || '',
+                capacity: depotBase.capacity || 10000
+            });
+        }
+    }, [depotBase]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onEdit(depotBase.id || depotBase._id, formData);
+        onClose();
+    };
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h2>Edit Depot</h2>
+                    <button onClick={onClose} className="close-btn"><X size={20} /></button>
+                </div>
+                <form onSubmit={handleSubmit} className="add-item-form">
+                    <div className="form-group">
+                        <label>Depot Name</label>
+                        <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Bangalore Distribution Center" />
+                    </div>
+                    <div className="form-group">
+                        <label>Location</label>
+                        <input type="text" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. Karnataka, India" />
+                    </div>
+                    <div className="form-group">
+                        <label>Pincode</label>
+                        <input type="text" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} placeholder="e.g. 560001" />
+                    </div>
+                    <div className="form-group">
+                        <label>Total Capacity (Units)</label>
+                        <input type="number" required value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: e.target.value })} placeholder="10000" />
+                    </div>
+                    <button type="submit" className="submit-btn-purple">Update Depot</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const DepotCard = ({ depot, onViewDetails, onDelete, onEditClick, canWrite, userIsAdmin }) => {
     const utilization = Math.round((depot.currentUtilization / depot.capacity) * 100) || 0;
     const getStatusColor = (u) => {
         if (u > 85) return '#ef4444'; // Critical
@@ -66,7 +130,7 @@ const DepotCard = ({ depot, onViewDetails, onDelete, canWrite, userIsAdmin }) =>
                 <div className="depot-header-info">
                     <h3>{depot.name}</h3>
                     <div className="location-pill">
-                        <MapPin size={12} /> {depot.location}
+                        <MapPin size={12} /> {depot.location} {depot.pincode ? `- ${depot.pincode}` : ''}
                     </div>
                 </div>
                 <div className="status-indicator" style={{ backgroundColor: getStatusColor(utilization) }}></div>
@@ -109,16 +173,29 @@ const DepotCard = ({ depot, onViewDetails, onDelete, canWrite, userIsAdmin }) =>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {userIsAdmin && (
-                    <button
-                        className="delete-depot-btn"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(depot.id || depot._id, depot.name);
-                        }}
-                        title="Delete depot"
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                        <>
+                            <button
+                                className="edit-depot-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditClick(depot);
+                                }}
+                                title="Edit depot"
+                                style={{ background: 'transparent', border: '1px solid #d1d5db', color: '#4b5563', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                <Edit size={14} />
+                            </button>
+                            <button
+                                className="delete-depot-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(depot.id || depot._id, depot.name);
+                                }}
+                                title="Delete depot"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </>
                     )}
                     <button className="view-inventory-btn" onClick={() => onViewDetails(depot.id || depot._id)}>
                         View Details <ExternalLink size={14} />
@@ -134,6 +211,8 @@ const Depots = () => {
     const [depots, setDepots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [depotToEdit, setDepotToEdit] = useState(null);
     const [currentView, setCurrentView] = useState('list'); // 'list' or 'details'
     const [selectedDepotId, setSelectedDepotId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -183,6 +262,23 @@ const Depots = () => {
             console.error('Failed to add depot:', error);
             alert(`Error adding depot: ${error.response?.data?.message || error.message}`);
         }
+    };
+
+    const handleEditDepot = async (depotId, updatedData) => {
+        try {
+            const response = await api.updateDepot(depotId, updatedData);
+            if (response.message === 'Depot updated successfully') {
+                fetchDepots();
+            }
+        } catch (error) {
+            console.error('Failed to update depot:', error);
+            alert(`Error updating depot: ${error.response?.data?.message || error.message}`);
+        }
+    };
+
+    const handleEditClick = (depot) => {
+        setDepotToEdit(depot);
+        setIsEditModalOpen(true);
     };
 
     const handleViewDetails = (depotId) => {
@@ -243,6 +339,13 @@ const Depots = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onAdd={handleAddDepot}
+            />
+
+            <EditDepotModal
+                isOpen={isEditModalOpen}
+                onClose={() => { setIsEditModalOpen(false); setDepotToEdit(null); }}
+                onEdit={handleEditDepot}
+                depotBase={depotToEdit}
             />
 
             <div className="depots-header" style={{ marginBottom: '32px' }}>
@@ -357,6 +460,7 @@ const Depots = () => {
                             depot={depot}
                             onViewDetails={handleViewDetails}
                             onDelete={handleDeleteDepot}
+                            onEditClick={handleEditClick}
                             canWrite={canWriteDepot(depot.id || depot._id)}
                             userIsAdmin={isAdmin()}
                         />

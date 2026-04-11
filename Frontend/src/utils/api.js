@@ -214,6 +214,11 @@ export const api = {
         return response.data;
     },
 
+    updateDepot: async (depotId, depotData) => {
+        const response = await nodeApi.put(`/depots/${depotId}`, depotData);
+        return response.data;
+    },
+
     getDepotDetails: async (depotId) => {
         const response = await nodeApi.get(`/depots/${depotId}/details`);
         return response.data;
